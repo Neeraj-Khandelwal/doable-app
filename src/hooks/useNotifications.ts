@@ -1,37 +1,43 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import {
+  getPermissionStatus,
+  requestNotificationPermission,
+  fireImmediateNotification,
+  isNative,
+  type NotifPermission,
+} from '../services/notificationService';
 
-export type NotifPermission = 'granted' | 'denied' | 'default' | 'unsupported';
-
-function getCurrentPermission(): NotifPermission {
-  if (typeof Notification === 'undefined') return 'unsupported';
-  return Notification.permission;
-}
+export type { NotifPermission };
 
 export function useNotifications() {
-  const [permission, setPermission] = useState<NotifPermission>(getCurrentPermission);
+  const [permission, setPermission] = useState<NotifPermission>('default');
+
+  // Load initial permission state (async on native)
+  useEffect(() => {
+    void getPermissionStatus().then(setPermission);
+  }, []);
 
   const requestPermission = useCallback(async () => {
-    if (typeof Notification === 'undefined') return;
-    const result = await Notification.requestPermission();
+    const result = await requestNotificationPermission();
     setPermission(result);
   }, []);
 
   const fire = useCallback(
-    (title: string, body: string, tag?: string) => {
+    (title: string, body: string, _tag?: string) => {
       if (permission !== 'granted') return;
-      try {
-        new Notification(title, { body, tag, icon: '/favicon.ico' });
-      } catch {
-        // Notifications blocked or in a context that doesn't support it
-      }
+      // On native, generate a stable numeric ID from the tag string
+      const id = _tag
+        ? Math.abs(_tag.split('').reduce((acc, c) => (acc * 31 + c.charCodeAt(0)) | 0, 0))
+        : (Date.now() & 0x7fffffff);
+      void fireImmediateNotification(title, body, id);
     },
     [permission]
   );
 
-  return { permission, requestPermission, fire };
+  return { permission, requestPermission, fire, isNative: isNative() };
 }
 
-// Key used in localStorage to track which alarms fired today
+// Key used in localStorage to track which alarms fired today (web-only fallback)
 export function alarmFiredKey(itemId: string, date: string) {
   return `doable-notified-${itemId}-${date}`;
 }
