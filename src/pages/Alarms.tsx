@@ -2,12 +2,19 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTaskContext } from '../context/TaskContext';
 import { useHabitContext } from '../context/HabitContext';
 import { useAlarmContext } from '../context/AlarmContext';
+import { useAuthContext } from '../context/AuthContext';
 import { CATEGORY_ICONS } from '../utils/taskModels';
 import { isScheduledToday, todayStr } from '../utils/habitModels';
 import { formatRepeatDays, alarmFiresToday } from '../utils/alarmModels';
 import type { Alarm } from '../utils/alarmModels';
 import { useNotifications, alarmFiredKey, formatTime } from '../hooks/useNotifications';
 import AlarmModal from '../components/alarms/AlarmModal';
+import {
+  scheduleReminderNotification,
+  cancelReminderNotification,
+  registerForPushNotifications,
+  idFromUuid,
+} from '../services/notificationService';
 
 type ReminderItem = {
   id: string;
@@ -143,12 +150,20 @@ export default function Alarms() {
   const { tasks } = useTaskContext();
   const { habits, getTodayCount } = useHabitContext();
   const { alarms, createAlarm, updateAlarm, deleteAlarm, toggleAlarm } = useAlarmContext();
-  const { permission, requestPermission, fire } = useNotifications();
+  const { user } = useAuthContext();
+  const { permission, requestPermission, fire, isNative } = useNotifications();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAlarm, setEditingAlarm] = useState<Alarm | null>(null);
 
   const today = todayStr();
+
+  // ── Register FCM push on native ──────────────────────────────────────────────
+  useEffect(() => {
+    if (isNative && user?.id) {
+      void registerForPushNotifications(user.id);
+    }
+  }, [isNative, user?.id]);
 
   // ── Reminder items from tasks + habits ──────────────────────────────────────
   const allReminders = useMemo<ReminderItem[]>(() => {
@@ -187,9 +202,27 @@ export default function Alarms() {
   const activeReminders = regularReminders.filter((r) => !r.isCompleted);
   const doneReminders = regularReminders.filter((r) => r.isCompleted);
 
-  // ── Notification polling (tasks + habits) ───────────────────────────────────
+  // ── Schedule local notifications for task/habit reminders (native only) ────
   useEffect(() => {
-    if (permission !== 'granted') return;
+    if (!isNative || permission !== 'granted') return;
+    allReminders.forEach((item) => {
+      if (item.isCompleted) {
+        void cancelReminderNotification(idFromUuid(item.id), item.nudgeInterval ?? 0);
+        return;
+      }
+      void scheduleReminderNotification(
+        idFromUuid(item.id),
+        item.reminderTime,
+        `${item.icon} ${item.title}`,
+        item.type === 'habit' ? 'Time for your habit!' : "Don't forget this task!",
+        item.nudgeInterval ?? 0,
+      );
+    });
+  }, [isNative, permission, allReminders]);
+
+  // ── Notification polling (tasks + habits) — web only ────────────────────────
+  useEffect(() => {
+    if (isNative || permission !== 'granted') return;
 
     const check = () => {
       const now = new Date();
@@ -317,7 +350,9 @@ export default function Alarms() {
         <div className="bg-mint/10 border border-mint/30 rounded-xl p-3 flex items-center gap-2">
           <span className="text-lg">✅</span>
           <p className="text-sm font-medium text-gray-700">
-            Notifications enabled — alarms fire while the app is open.
+            {isNative
+              ? 'Notifications enabled — alarms fire even when the app is closed.'
+              : 'Notifications enabled — alarms fire while the app is open.'}
           </p>
         </div>
       )}
@@ -405,9 +440,9 @@ export default function Alarms() {
         </section>
       )}
 
-      {totalCount > 0 && (
+      {totalCount > 0 && !isNative && (
         <p className="text-xs text-gray-400 text-center px-4">
-          Alarms fire while the app is open. For background alerts, use your phone's clock app.
+          Alarms fire while the app is open. Install the Android app for background alerts.
         </p>
       )}
 

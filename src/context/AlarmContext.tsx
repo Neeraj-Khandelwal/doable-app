@@ -9,6 +9,11 @@ import {
 import { supabase } from '../supabaseClient';
 import { useAuthContext } from './AuthContext';
 import type { Alarm, AlarmSound, RepeatDay } from '../utils/alarmModels';
+import {
+  scheduleAlarmNotification,
+  cancelAlarmNotification,
+  idFromUuid,
+} from '../services/notificationService';
 
 type CreateAlarmInput = {
   time: string;
@@ -80,6 +85,23 @@ export const AlarmProvider = ({ children }: { children: ReactNode }) => {
     ]);
     if (err) return { error: err.message };
     await fetchAlarms();
+
+    // Schedule local notification on native (fires even when app is closed)
+    const { data: created } = await supabase
+      .from('alarms')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+    if (created && (data.enabled ?? true)) {
+      void scheduleAlarmNotification(
+        idFromUuid(created.id),
+        created.time,
+        created.label ?? null,
+        created.repeat_days ?? [],
+      );
+    }
     return {};
   };
 
@@ -101,15 +123,31 @@ export const AlarmProvider = ({ children }: { children: ReactNode }) => {
     setAlarms((prev) =>
       prev.map((a) => (a.id === id ? { ...a, ...(data as Partial<Alarm>) } : a))
     );
+
+    // Re-schedule or cancel local notification
+    const updated = alarms.find((a) => a.id === id);
+    if (updated) {
+      const merged = { ...updated, ...data };
+      const notifId = idFromUuid(id);
+      if (merged.enabled) {
+        void scheduleAlarmNotification(notifId, merged.time, merged.label ?? null, merged.repeat_days ?? []);
+      } else {
+        void cancelAlarmNotification(notifId, merged.repeat_days ?? []);
+      }
+    }
     return {};
   };
 
   const deleteAlarm = async (id: string): Promise<{ error?: string }> => {
+    const alarm = alarms.find((a) => a.id === id);
     setAlarms((prev) => prev.filter((a) => a.id !== id));
     const { error: err } = await supabase.from('alarms').delete().eq('id', id);
     if (err) {
       void fetchAlarms();
       return { error: err.message };
+    }
+    if (alarm) {
+      void cancelAlarmNotification(idFromUuid(id), alarm.repeat_days ?? []);
     }
     return {};
   };
