@@ -1,0 +1,587 @@
+# DOABLE
+
+## Product Requirements Document (PRD)
+### Family Productivity App — Android
+
+| **Field** | **Value** |
+|-----------|-----------|
+| **Version** | 1.3 — MVP (As-Built) |
+| **Date** | May 13, 2026 |
+| **Platform** | Android (Google Play Store) |
+| **Status** | In Development — Phase 10 Complete, Phase 11 (Voice) Upcoming |
+| **Author** | Personal Learning Project |
+| **Built with** | React + TypeScript + Vite + Tailwind CSS v4 + Supabase + Capacitor + EAS Build |
+
+---
+
+## 1. Product Overview
+
+Doable is a personal and family productivity app that combines daily habit tracking, task management, intermittent fasting tracking, a kids reward system, standalone alarms, a shared grocery list, and real-time family collaboration — all in one soft, friendly mobile experience.
+
+The app is designed for a family of up to 6 members: 2 parents and up to 4 kids. The owner (primary parent) manages everything — their own habits, personal tasks, shared family tasks, and tasks/habits assigned to kids. Kids have no login and are managed entirely by parents.
+
+### 1.1 Problem Statement
+
+- Families struggle to manage tasks, habits, and kids' responsibilities across multiple apps
+- Parents have no easy way to track and reward kids' performance on daily routines
+- Adding tasks while driving is dangerous — voice capture (Phase 11) solves this
+- Fasting tracking needs to be motivational, not clinical
+
+### 1.2 Goals
+
+- One app for all family productivity needs — tasks, habits, fasting, rewards, alarms, grocery
+- Motivate kids through a transparent points and rewards system
+- Real-time sync between parent devices for shared family tasks
+- **Phase 11:** Zero-friction task creation via voice commands — "OK Google, add task in Doable: ..."
+- Build, publish, and launch on Google Play Store
+
+---
+
+## 2. Users & Roles
+
+| Role | Login | Access | Max |
+|------|-------|--------|-----|
+| **Owner (Creator)** | Yes | Full — habits, personal tasks, family tasks, kids tasks, rewards, alarms, grocery, settings | 1 |
+| **Partner / Spouse** | Yes | Family tasks, shared grocery list, kid task rating | 1 |
+| **Kid** | No | Managed by owner — tasks, habits, reward points tracked by parent | Up to 4 |
+
+---
+
+## 3. Screens & Navigation
+
+### Bottom Navigation (5 tabs)
+
+| Tab | Icon | Route |
+|-----|------|-------|
+| Home | 🏠 | `/home` |
+| Tasks | 📋 | `/tasks` |
+| Habits | 🎯 | `/habits` |
+| Rewards | 🏆 | `/rewards` |
+| Family | 👨‍👩‍👧‍👦 | `/family` |
+
+### Header
+
+- **App title:** "Doable" (left)
+- **Bell icon 🔔** (right) — navigates to `/alarms`, shows badge count of active task + habit reminders
+- **Avatar** (right) — shows user initials + "Hi, [FirstName]", navigates to `/family`
+
+### Additional Routes (not in bottom nav)
+
+| Route | Access |
+|-------|--------|
+| `/alarms` | Header bell icon |
+| `/fasting` | FastingCard on Home, direct URL |
+| `/grocery` | Direct URL |
+| `/family-setup` | Post-signup flow |
+| `/join` | Invite link |
+| `/login`, `/signup`, `/forgot-password`, `/reset-password` | Public |
+
+---
+
+### 3.1 Home Screen (`/home`)
+
+- **Greeting header:** "Hey, [FirstName]! 👋" with subtitle "What needs to get done today?"
+- **Quick task creation card:**
+  - Text input "What needs to be done?"
+  - Assignee pills: Me (lavender) + each kid (their color)
+  - "+ Add Task" button (turns green with "✓ Task added!" on success)
+- **Fasting card** (always visible — shows idle or active state)
+- **My Tasks section:**
+  - Shows up to 5 active tasks assigned to "me", sorted overdue-first then by due date
+  - Each row: circle complete button · category icon · title · due date (red ⚠ if overdue) · priority badge (high/low only)
+  - Tapping the circle calls `markComplete()` immediately
+  - "View all" link top-right navigates to `/tasks`
+  - "+N more tasks →" footer when more than 5 active tasks exist
+  - Empty state: 🎉 "All caught up! No active tasks."
+- **FAB (+):** fixed bottom-right, opens `/tasks` with task creation modal
+
+---
+
+### 3.2 Tasks Screen (`/tasks`)
+
+- **Header:** "Tasks" + count of visible tasks
+- **Tab switcher:** Me · [Kid1] · [Kid2] · ... (filters tasks by assignee)
+- **Filter chips:** All / Active / Done / High Priority
+- **Task cards:** title, assignees (color-coded pills), due date (red if overdue), priority badge, category icon, complete circle
+- Completing a personal task calls `markComplete()` directly
+- Completing a kid task opens the rating modal to award points
+- **FAB (+):** opens add task modal
+- **Task modal fields:** Title, Assignees (multi-select pills), Due date, Reminder time, Alert type (Notification / Alarm / Nudge), Nudge interval (5/10/15/30/60 min), Priority (High/Medium/Low), Category, Recurrence (None/Daily/Weekly/Monthly), Description
+- Recurring tasks auto-create next occurrence on completion
+
+---
+
+### 3.3 Habits Screen (`/habits`)
+
+- **Header:** "Habits" + count
+- **Tab switcher:** Mine · [Kid1] · [Kid2] · ...
+- **Habit cards:** icon, title, frequency label, 7-day dot calendar (green=done, red=missed, orange=today), streak counter 🔥, target count, complete/undo button
+- Kid habits: completing opens streak bonus toast if 7-day streak achieved (+5 bonus points)
+- **FAB (+):** opens add habit modal
+- **Habit modal fields:** Title, Icon (emoji picker from 24 preset icons), Description, Frequency (Daily/Weekdays/Weekends/Custom days), Target count per day, Reminder time, Category, Assignees (multi-select)
+
+---
+
+### 3.4 Alarms Screen (`/alarms`) — Phase 10 ✅
+
+- **Standalone Alarms section** (top):
+  - List of user-created alarms sorted by time
+  - Each row: time (12h format), label, repeat pattern, sound icon, enable/disable toggle
+  - Tapping a row opens edit modal
+  - "+" Add button (top-right) and FAB both open create modal
+  - Empty state if no alarms
+- **Task & Habit Reminders section** (below):
+  - Pulled automatically from tasks with `reminder_time` and habits scheduled today
+  - Sub-sections: Today's Reminders · Nudge Reminders · Done Today
+  - Each row: time pill, category/habit icon, title, type badge (🔔 Notify / ⏰ Alarm / 📳 Nudge), nudge interval
+- **Notification permission banner:** prompts user to allow browser notifications; shows green confirmed state when granted
+- **Polling:** checks every 30 seconds while page is open; fires browser Notification API for due alarms; tracks fired alarms in localStorage per day to prevent duplicates
+- **Add/Edit Alarm Modal:**
+  - Time picker (native `<input type="time">`)
+  - Label (optional free text)
+  - Repeat days (Sun–Sat toggle buttons, empty = one-time)
+  - Sound selector: Default 🔔 / Bell 🛎️ / Chime 🎵 / Silent 🔕
+  - Enabled/Disabled toggle switch
+  - Delete button (edit mode only)
+
+---
+
+### 3.5 Family & Account Screen (`/family`)
+
+Combined page with two sub-tabs: **Family** and **Account**
+
+**Family tab — no family yet:**
+- Create family card: family name input + "Create Family" button
+- Divider "— or join existing —"
+- Join family card: invite code input + "Join Family" button
+
+**Family tab — has family:**
+- Invite code card: shows generated code, 📋 "Tap to copy" button (shows "✓ Copied!" feedback)
+- Members list: each member shows email, role badge (Owner/Partner), joined date, remove button (owner only)
+- Kids section: add form (collapsible, with name + color picker), each kid shows name, color swatch, edit name/color, remove button
+
+**Account tab:**
+- Avatar circle with initials (lavender background)
+- Display name input + "Save" button (upserts to `user_profiles` table)
+- Email display (read-only)
+- Sign Out button
+- App version footer "Doable v1.0"
+
+---
+
+### 3.6 Fasting Tracker Screen (`/fasting`)
+
+- Circular SVG progress ring (stroke-dashoffset animation)
+- Live timer updating every second (HH:MM:SS)
+- Stage name + motivational message
+- Stage progress bar (6 dot indicators)
+- Start Fast / End Fast buttons
+- Goal hours setting (input + update button)
+- 7-day session history bar chart (recharts)
+- Stats: total sessions, average duration, goals hit
+
+**Home screen fasting card (FastingCard component):**
+- Always shown on home page
+- **Idle state:** "Start a Fast" button + goal display
+- **Active state:** live timer, % progress ring, current stage, "End Fast" button
+
+---
+
+### 3.7 Rewards Screen (`/rewards`)
+
+- Points cards per kid: name, current balance, total earned, points history button
+- **Adhoc award panel:** +/- point input, reason text, "Give Points" button (owner can manually award or deduct)
+- Reward redemption list: each reward shows name, cost, "Redeem" button (enabled if balance ≥ cost, else greyed)
+- Redemption history per kid: date, reward name, points deducted
+- Manage button → Manage Rewards modal (add/edit/delete rewards)
+- Manage Ratings button → Manage Ratings modal (add/edit/delete rating levels)
+
+---
+
+### 3.8 Grocery Screen (`/grocery`)
+
+- Text input + "Add" button (Enter key supported)
+- Unpurchased items list (top): checkbox, item name, delete button
+- Purchased items list (bottom, strikethrough + dimmed): checkbox to uncheck, delete button
+- "Clear Purchased" button
+- Real-time sync via Supabase Realtime — changes appear on partner's device within seconds
+- Empty state when list is empty
+
+---
+
+## 4. Feature Specifications
+
+### 4.1 Task Management
+
+| Field | Detail |
+|-------|--------|
+| Title | Free text — required |
+| Assigned to | Me / any kid / multiple kids (multi-select pills) |
+| Due date | Date picker (Today / Tomorrow shortcuts) |
+| Reminder time | Time picker — fires browser notification when due |
+| Alert style | Notification / Alarm-style / Repeated nudge |
+| Nudge interval | 5 / 10 / 15 / 30 / 60 min |
+| Priority | High (rose) / Medium (amber) / Low (gray) |
+| Category | Home / Work / Health / Shopping / Kids / School / Finance / Other |
+| Recurring | None / Daily / Weekly / Monthly — auto-creates next task on completion |
+| Overdue | Computed: due_date < today && !completed_at |
+
+### 4.2 Habit Tracking
+
+- Habits can be assigned to Owner ('me') and/or any kid (multi-assignee)
+- Frequency: Daily / Weekdays / Weekends / Custom (pick specific days)
+- Target count per day (e.g. drink water 8x)
+- 7-day dot calendar: green (done), red (missed), orange (today not yet done)
+- Streak counter — computed from consecutive scheduled days with completions
+- **7-day streak bonus:** completing a habit every scheduled day for 7 consecutive days awards +5 bonus points to kid, fires confetti, shows toast
+- Habits reset at midnight — tracked by date strings (YYYY-MM-DD)
+- Marking owner habit done: direct tick + undo
+- Marking kid habit done: increments count, awards bonus if streak milestone
+
+### 4.3 Rating Scale & Points
+
+| Rating | Emoji | Points |
+|--------|-------|--------|
+| Awesome | 🌟 | +5 |
+| Good | 👍 | +3 |
+| Ok Ok | 😐 | +1 |
+| Very Bad | 👎 | −2 |
+
+- Ratings are configurable in Manage Ratings modal
+- Each rating event is stored in `kid_point_events` table (type: `task_rating`)
+- Streak bonuses stored in same table (type: `streak_bonus`)
+- Adhoc awards/deductions stored in same table (type: `adhoc`)
+- Kid points balance = SUM of all `kid_point_events` for that kid
+
+### 4.4 Redeemable Rewards
+
+Default rewards (configurable):
+
+| Reward | Cost |
+|--------|------|
+| 30 min extra screen time | 30 pts |
+| Ice cream treat | 100 pts |
+| Choose weekend activity | 200 pts |
+
+- Rewards stored in `rewards` table, fully configurable (add / edit / delete)
+- On redemption: creates `redemption_history` record, deducts from balance
+
+### 4.5 Intermittent Fasting Tracker
+
+| Stage | Hours | Motivational Message |
+|-------|-------|----------------------|
+| Fed state | 0h | Every journey starts with one step — you have got this! |
+| Glycogen burning | 4h | Great start! Your body is using stored sugars for energy. |
+| Fat burning begins | 8h | You are in the zone! Fat burning has started. |
+| Deep fat burning | 12h | Over halfway! Your metabolism is in full fat-burning mode. |
+| Autophagy kick-in | 16h | Goal reached! Your body is now cleaning and renewing cells. |
+| Deep fasting zone | 20h | Elite mode! Most people never get here — incredible! |
+
+- Default goal: 16 hours (user-configurable)
+- Active session stored in `fast_sessions` table (end_time = NULL while active)
+- Timer updates every second via `setInterval`
+- Progress ring: SVG `stroke-dashoffset` animation
+
+### 4.6 Standalone Alarms (Phase 10 ✅)
+
+- Created and managed independently of tasks/habits
+- Stored in `alarms` table (user-scoped, not family-scoped)
+- Fields: time (HH:MM), label (optional), enabled toggle, repeat days (0–6), sound (default/bell/chime/silent)
+- Repeat days: empty array = one-time alarm; 7 days = every day; partial = selected days
+- Firing logic: polls every 30 seconds while app is open; uses browser Notification API; deduplicates via localStorage key per alarm+date
+- Enable/disable toggle without deleting the alarm
+
+### 4.7 Task & Habit Reminders
+
+- Task reminders: tasks with `reminder_time` and no `completed_at`
+- Habit reminders: habits with `reminder_time` scheduled for today
+- Alert types:
+  - **Notification:** single browser notification at reminder time
+  - **Alarm:** same as notification (native alarm sound requires Capacitor — Phase 12)
+  - **Nudge:** re-notifies every X minutes starting from reminder time until task completed
+- Badge count in header bell = active task reminders + active habit reminders
+
+### 4.8 Grocery List
+
+- Shared between owner and partner (family-scoped)
+- Real-time sync via Supabase Realtime (INSERT / UPDATE / DELETE events)
+- Max 100 items per family
+- Purchased items shown separately with strikethrough; "Clear Purchased" bulk deletes them
+
+### 4.9 Family Collaboration
+
+- Family created by owner with auto-generated 8-character invite code
+- Partner joins via invite code input on `/join` route
+- Family data scoped by `family_id` across all tables
+- Supabase Realtime subscription on tasks, grocery items
+- Owner can add/edit/remove kid profiles (name + color)
+- Partner can view and complete shared tasks, rate kid tasks, view grocery list
+- Profile name saved to `user_profiles` table; falls back to `user_metadata` then email prefix
+
+### 4.10 Voice Task Capture ⭐ Phase 11 — Planned
+
+**User Flow:**
+1. User says: "OK Google, add task in Doable: buy milk"
+2. Google Assistant routes to `doable://voice?action=add_task&text=Buy+milk`
+3. App receives deep link (Capacitor.App listener)
+4. Draft task created; push notification fires: "🎙️ Voice task saved — tap to review"
+5. User opens app; Voice Task Modal shows pre-populated fields
+6. User reviews/edits and taps "Save task"
+7. Task saved to Supabase; syncs to all family devices
+
+**Key behaviors:**
+- Hands-free (screen off) — safe while driving
+- All voice input user-reviewed before saving (no auto-save)
+- Task tagged with `created_via: 'google_assistant'`
+- Requires app published on Play Store for App Actions to activate
+
+---
+
+## 5. Database Schema
+
+### Supabase Tables
+
+| Table | Key Columns | Scope |
+|-------|-------------|-------|
+| `families` | id, name, owner_id, invite_code | Family |
+| `family_members` | family_id, user_id, role (owner/partner), joined_at | Family |
+| `user_profiles` | id (= auth user id), full_name | User |
+| `kid_profiles` | id, family_id, name, color | Family |
+| `tasks` | id, family_id, title, assignees[], due_date, reminder_time, reminder_type, nudge_interval, priority, category, recurrence, completed_at, ratings[] | Family |
+| `habits` | id, family_id, title, assignees[], frequency, frequency_days[], target_count, icon, reminder_time, is_active | Family |
+| `habit_completions` | id, habit_id, family_id, completed_by, date | Family |
+| `fast_sessions` | id, user_id, family_id, start_time, end_time, goal_minutes | User |
+| `fasting_goals` | user_id, goal_hours | User |
+| `grocery_items` | id, family_id, name, is_purchased | Family |
+| `rating_types` | id, family_id, label, emoji, point_value | Family |
+| `rewards` | id, family_id, name, point_cost | Family |
+| `redemption_history` | id, kid_id, family_id, reward_id, points_deducted, created_at | Family |
+| `kid_point_events` | id, kid_id, family_id, points, reason, type (adhoc/streak_bonus/task_rating), habit_id, created_by, event_date | Family |
+| `alarms` | id, user_id, family_id, time, label, enabled, repeat_days[], sound | User |
+
+### Migration Files
+
+| File | Description |
+|------|-------------|
+| `001_initial_schema.sql` | families, family_members, user_profiles, kid_profiles, tasks |
+| `002_enable_rls.sql` | Row-level security policies |
+| `003_habits.sql` | habits, habit_completions |
+| `004_rewards.sql` | rating_types, rewards, redemption_history |
+| `005_rating_config.sql` | Rating configuration updates |
+| `006_fasting.sql` | fast_sessions, fasting_goals |
+| `007_grocery.sql` | grocery_items |
+| `009_kid_point_events.sql` | kid_point_events (replaces habit_streak_bonuses) |
+| `010_alarms.sql` | alarms table + patch ALTER TABLEs + schema cache reload |
+
+> **Note:** All tables use `DISABLE ROW LEVEL SECURITY` for development. Enable RLS with proper policies before Play Store launch.
+
+---
+
+## 6. Non-Functional Requirements
+
+| Requirement | Detail |
+|-------------|--------|
+| **Platform** | Android 10+ (API level 29+) |
+| **App startup** | Opens in under 2 seconds |
+| **Real-time sync** | Changes reflected within 3 seconds (Supabase Realtime) |
+| **Offline support** | Tasks and habits load from local cache when no internet |
+| **Authentication** | Email + password via Supabase Auth |
+| **Database** | Supabase PostgreSQL — free tier |
+| **Push notifications** | Firebase Cloud Messaging (FCM) — Phase 12 |
+| **Alarm reminders** | Browser Notification API (web); Capacitor local notifications (Phase 12) |
+| **Voice integration** | Android App Actions — requires Play Store publication (Phase 11) |
+| **Privacy** | Partner cannot access owner personal tasks |
+| **Family size** | Maximum 6 members: 2 parents + 4 kids |
+
+---
+
+## 7. Tech Stack
+
+| Layer | Tool | Notes |
+|-------|------|-------|
+| **Frontend framework** | React 18 + TypeScript + Vite | Strict TypeScript, ESLint |
+| **Styling** | Tailwind CSS v4 | Custom colors via `@theme { --color-*: hex }` |
+| **Routing** | React Router v6 | Protected routes via `ProtectedRoute` wrapper |
+| **Database + Auth** | Supabase | PostgreSQL + Auth + Realtime |
+| **Real-time sync** | Supabase Realtime | Channel subscriptions per feature |
+| **State management** | React Context (per feature) | AuthContext, FamilyContext, TaskContext, HabitContext, RewardsContext, FastingContext, GroceryContext, AlarmContext |
+| **Charts** | recharts | Fasting history bar chart |
+| **Notifications** | Browser Notification API | Polled every 30s; Capacitor in Phase 12 |
+| **Confetti** | canvas-confetti | Fires on 7-day habit streak bonus |
+| **Android wrapper** | Capacitor | Phase 12 |
+| **Cloud build** | EAS Build (Expo) | Phase 12 — 30 builds/month free tier |
+| **Code hosting** | GitHub | Version control |
+| **Play Store** | Google Play Console | $25 one-time — Phase 13 |
+
+### Color System
+
+| Name | Hex | Usage |
+|------|-----|-------|
+| `lavender` | `#7C6FF0` | Primary brand, buttons, active states |
+| `peach` | `#FF8F5E` | Accent |
+| `mint` | `#2EB87A` | Success, habit completion |
+| `sky` | `#2FA8E0` | Info, notifications |
+| `amber` | `#E8A800` | Medium priority, warnings |
+| `rose` | `#E85450` | Errors, high priority, destructive |
+
+---
+
+## 8. Out of Scope (MVP)
+
+- iOS version (Siri Shortcuts planned for v2.0)
+- Dark mode (planned for v1.1)
+- Third-party login (Google, Apple)
+- Task comments or in-app chat
+- Calendar view
+- File attachments on tasks
+- Kids logging in to the app
+- Multi-language support (English only v1.0)
+- Offline voice processing
+- Voice command to update/complete tasks (planned for v1.2)
+- More than 6 family members
+- Native alarm sound (requires Capacitor — Phase 12)
+- Background alarm firing when app is closed (requires Capacitor — Phase 12)
+
+---
+
+## 9. MVP Success Criteria
+
+| # | Criterion | Status |
+|---|-----------|--------|
+| 01 | Owner can sign up, create family, and invite partner | ✅ Built |
+| 02 | Owner can create and track daily habits with 7-day streak calendar | ✅ Built |
+| 03 | Owner can create personal tasks with due dates and reminder alerts | ✅ Built |
+| 04 | Owner can create and view tasks separately per kid via tab switcher | ✅ Built |
+| 05 | Completing a kid task opens rating modal and awards points | ✅ Built |
+| 06 | Partner can see and complete shared family tasks in real time | ✅ Built |
+| 07 | Fasting tracker starts, runs live timer, shows motivational stage | ✅ Built |
+| 08 | Fasting live card appears on home screen when fast is active | ✅ Built |
+| 09 | Active tasks for current user shown on home screen below fasting card | ✅ Built |
+| 10 | Overdue tasks highlighted in red with ⚠ badge on home and tasks screens | ✅ Built |
+| 11 | Repeated nudge re-notifies every X minutes until task marked done | ✅ Built |
+| 12 | Standalone alarms created, edited, deleted with repeat day schedule | ✅ Built |
+| 13 | Alarm enable/disable toggle without deleting | ✅ Built |
+| 14 | Mayra and Shagun have separate points balances that accumulate | ✅ Built |
+| 15 | Rewards redeemable when points threshold reached | ✅ Built |
+| 16 | Rating scale configurable (label, emoji, points) | ✅ Built |
+| 17 | Owner can manually give/deduct adhoc points to kids with reason | ✅ Built |
+| 18 | 7-day habit streak awards +5 bonus points with confetti | ✅ Built |
+| 19 | Grocery list shared in real time between owner and partner | ✅ Built |
+| 20 | Family + Account merged into single tab; profile name editable | ✅ Built |
+| 21 | Voice command "OK Google, add task in Doable: [text]" creates draft task | ⏳ Phase 11 |
+| 22 | Voice task modal allows review, edit, and save before database commit | ⏳ Phase 11 |
+| 23 | App is published on Google Play Store and installable on Android 10+ | ⏳ Phase 13 |
+
+---
+
+## 10. Build Timeline
+
+| Phase | Activity | Status |
+|-------|----------|--------|
+| Phase 1 | Requirements, features, family setup, UI design | ✅ Complete |
+| Phase 2 | UI prototype — all screens designed | ✅ Complete |
+| Phase 3 | Auth, family, tasks — Supabase connected | ✅ Complete |
+| Phase 4 | Habit tracking with 7-day calendar + streaks | ✅ Complete |
+| Phase 5 | Rewards, rating system, kid points | ✅ Complete |
+| Phase 6 | Adhoc point awards/deductions, streak bonuses | ✅ Complete |
+| Phase 7 | Intermittent fasting tracker | ✅ Complete |
+| Phase 8 | Grocery list with real-time sync | ✅ Complete |
+| Phase 9 | Navigation cleanup — merged Family+Profile, removed launch grid, added active tasks on home | ✅ Complete |
+| Phase 10 | Standalone alarms with CRUD + AlarmContext + modal | ✅ Complete |
+| Phase 11 | Voice Integration — Google App Actions + Capacitor deep linking | ⏳ Upcoming |
+| Phase 12 | Android wrap — Capacitor, native notifications, APK build | ⏳ Upcoming |
+| Phase 13 | Play Store — AAB upload, App Actions, store listing | ⏳ Upcoming |
+
+---
+
+## 11. Voice Integration Plan (Phase 11)
+
+### Technical Architecture
+
+| Component | Technology | Purpose |
+|-----------|-----------|---------|
+| Voice Recognition | Google Assistant (cloud) | Processes spoken words |
+| App Routing | Android App Actions | Routes voice commands to app |
+| Deep Linking | Custom URI scheme `doable://voice` | Passes task text to app |
+| Event Listener | Capacitor.App | Listens for deep link events |
+| Draft Creation | `useVoiceCapture` hook | Parses parameters, creates draft |
+| UI Component | `VoiceTaskModal` | Review and edit interface |
+| Storage | Supabase PostgreSQL | Persists final task |
+| Notifications | Capacitor.LocalNotifications | Alerts user to review task |
+
+### Supported Voice Commands
+
+```
+"OK Google, add task in Doable: buy milk"
+"OK Google, add task in Doable: homework for Mayra tomorrow"
+"OK Google, add task in Doable: meeting at 2pm, high priority"
+"OK Google, add task in Doable: pick up kids 3pm reminder every 10 minutes"
+```
+
+### Implementation Checklist
+
+- [ ] `actions.xml` — Google App Actions routing
+- [ ] `AndroidManifest.xml` — intent filters for `doable://voice`
+- [ ] `capacitor.config.ts` — deep link schema
+- [ ] `useVoiceCapture` hook — parse URL params, create draft
+- [ ] `VoiceTaskModal` component — review/edit UI
+- [ ] `@capacitor/app` — deep link listener
+- [ ] `@capacitor/local-notifications` — notify user of pending voice task
+
+### Limitations
+
+- Requires app published on Play Store (App Actions activate after publication)
+- Android 10+ only
+- Google Assistant must be set as default assistant
+- English only for v1.0
+- Cloud processing — requires internet connection
+
+---
+
+## 12. Future Roadmap
+
+### v1.1 (Q3 2026)
+- Dark mode support
+- Multi-language support (Spanish, French, German)
+- Calendar view for tasks and habits
+- Task templates
+
+### v1.2 (Q4 2026)
+- Voice command for marking tasks done: "OK Google, mark [task] done in Doable"
+- Voice task update: "OK Google, reschedule homework to Friday in Doable"
+- Fuzzy matching for voice-to-task name matching
+- Native background alarm firing (Capacitor foreground service)
+
+### v2.0 (2027)
+- iOS version with Siri Shortcuts
+- iPad support
+- Third-party login (Google, Apple)
+- Task attachments and subtasks
+- In-app family chat
+
+---
+
+## 13. Success Metrics
+
+| Metric | Target |
+|--------|--------|
+| Feature completion | 20/23 MVP criteria met before Phase 11 |
+| App rating | 4.5+ stars on Play Store |
+| Real-time sync latency | < 3 seconds |
+| Daily active users | 100+ by month 3 |
+| Voice adoption (post Phase 11) | 30% of users within first week |
+
+---
+
+## Document Information
+
+| Field | Value |
+|-------|-------|
+| **Prepared by** | Personal Learning Project |
+| **Status** | Phase 10 complete — Phase 11 (Voice) next |
+| **Last updated** | May 13, 2026 |
+| **Next review** | After Phase 11 completion |
+
+---
+
+**End of PRD Document**

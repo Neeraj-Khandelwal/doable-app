@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+@theme {
+  /* ── Backgrounds ── */
+  --color-bg: #FAF6EE;
+  --color-bg-deep: #F2EBDB;
+
+  /* ── Ink (text) ── */
+  --color-ink: #1B1714;
+  --color-ink-2: #3F3833;
+  --color-ink-3: #6E665E;
+  --color-ink-4: #A39A8E;
+
+  /* ── Lines / borders ── */
+  --color-line: #EAE2D2;
+  --color-line-soft: #F1EADC;
+
+  /* ── Brand: Plum ── */
+  --color-plum: #4A2D5C;
+  --color-plum-2: #6B4485;
+  --color-plum-soft: #EDE3F2;
+  --color-plum-ink: #2A1638;
+
+  /* lavender → plum alias so all existing bg-lavender / text-lavender still work */
+  --color-lavender: #4A2D5C;
+
+  /* ── Kid / family accent colors ── */
+  --color-mayra: #E07A5F;
+  --color-mayra-soft: #FBE8E0;
+  --color-shagun: #3D8E8E;
+  --color-shagun-soft: #DCEEEE;
+  --color-family: #6B5B95;
+  --color-family-soft: #E6E0EE;
+
+  /* ── Status colors ── */
+  --color-green: #6B8E5A;
+  --color-green-soft: #E2EBD8;
+  --color-amber: #D4A35C;
+  --color-amber-soft: #F7ECD7;
+  --color-red: #C25450;
+  --color-red-soft: #F7DEDB;
+
+  /* Legacy aliases — keeps existing components that use these names working */
+  --color-peach: #E07A5F;
+  --color-mint: #6B8E5A;
+  --color-sky: #3D8E8E;
+  --color-rose: #C25450;
+
+  /* ── Typography ── */
+  --font-family-sans: 'Manrope', system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Manrope', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  background: #FAF6EE;
+  color: #1B1714;
+}
+
+#root {
+  width: 100%;
+  min-height: 100svh;
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
