@@ -33,6 +33,7 @@ export default function GivePointsModal({ isOpen, onClose, kids, defaultKidId, o
       setAmount('');
       setReason('');
       setError('');
+      setSaving(false);
     }
   }, [isOpen, defaultKidId, kids]);
 

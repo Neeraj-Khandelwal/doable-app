@@ -1,12 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useTaskContext, type TaskFilter } from '../context/TaskContext';
 import { useFamilyContext } from '../context/FamilyContext';
+import { useAuthContext } from '../context/AuthContext';
 import { isKidTask } from '../utils/taskModels';
 import type { Task } from '../utils/taskModels';
 import TaskCard from '../components/tasks/TaskCard';
 import TaskModal from '../components/tasks/TaskModal';
 import RatingModal from '../components/tasks/RatingModal';
+import IncomingTaskCard from '../components/tasks/IncomingTaskCard';
 import { useConfetti } from '../hooks/useConfetti';
 
 const FILTER_TABS: { key: TaskFilter; label: string }[] = [
@@ -26,8 +28,9 @@ const KID_COLOR_MAP: Record<string, string> = {
 };
 
 export default function Tasks() {
-  const { filteredTasks, loading, error, filter, setFilter, createTask, updateTask, deleteTask, markComplete, rateAndComplete } = useTaskContext();
-  const { kidProfiles } = useFamilyContext();
+  const { filteredTasks, tasks, loading, error, filter, setFilter, createTask, updateTask, deleteTask, markComplete, rateAndComplete, acceptTask, rejectTask } = useTaskContext();
+  const { kidProfiles, familyMembers } = useFamilyContext();
+  const { user } = useAuthContext();
 
   const { fire, fireForKids } = useConfetti();
   const location = useLocation();
@@ -36,6 +39,21 @@ export default function Tasks() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [ratingTask, setRatingTask] = useState<Task | null>(null);
   const [assigneeFilter, setAssigneeFilter] = useState<string>('all');
+
+  // Derive partner from family members
+  const partner = useMemo(() => {
+    const partnerMember = familyMembers.find((m) => m.user_id !== user?.id);
+    if (!partnerMember) return null;
+    return { userId: partnerMember.user_id, name: 'Partner' };
+  }, [familyMembers, user?.id]);
+
+  // Tasks where current user is the assignee and status is pending
+  const incomingTasks = useMemo(() =>
+    tasks.filter(
+      (t) => t.assigned_to_user_id === user?.id && t.assignment_status === 'pending_acceptance'
+    ),
+    [tasks, user?.id]
+  );
 
   useEffect(() => {
     if ((location.state as { openModal?: boolean } | null)?.openModal) {
@@ -94,15 +112,42 @@ export default function Tasks() {
     }
   };
 
-  const assigneeFiltered =
-    assigneeFilter === 'all'
-      ? filteredTasks
-      : assigneeFilter === 'me'
-      ? filteredTasks.filter((t) => t.assignees.includes('me'))
-      : filteredTasks.filter((t) => t.assignees.includes(assigneeFilter));
+  const handleAccept = async (taskId: string) => {
+    await acceptTask(taskId);
+    fire();
+  };
 
-  const activeTasks = assigneeFiltered.filter((t) => !t.completed_at);
-  const doneTasks = assigneeFiltered.filter((t) => !!t.completed_at);
+  const handleReject = async (taskId: string, reason: string) => {
+    await rejectTask(taskId, reason);
+  };
+
+  // Assignee filter — also includes tasks assigned TO current user
+  const assigneeFiltered = useMemo(() => {
+    if (assigneeFilter === 'all') return filteredTasks;
+    if (assigneeFilter === 'me') {
+      return filteredTasks.filter(
+        (t) => t.assignees.includes('me') || t.assigned_to_user_id === user?.id
+      );
+    }
+    return filteredTasks.filter((t) => t.assignees.includes(assigneeFilter));
+  }, [filteredTasks, assigneeFilter, user?.id]);
+
+  // Exclude incoming (pending) tasks from the main list — shown separately
+  const mainTasks = useMemo(() =>
+    assigneeFiltered.filter(
+      (t) => !(t.assigned_to_user_id === user?.id && t.assignment_status === 'pending_acceptance')
+    ),
+    [assigneeFiltered, user?.id]
+  );
+
+  const activeTasks = mainTasks.filter((t) => !t.completed_at);
+  const doneTasks = mainTasks.filter((t) => !!t.completed_at);
+
+  // Creator name for incoming task cards
+  const getCreatorName = (task: Task) => {
+    if (task.created_by === partner?.userId) return partner.name;
+    return 'Someone';
+  };
 
   return (
     <div className="space-y-4 pb-4">
@@ -120,6 +165,26 @@ export default function Tasks() {
           +
         </button>
       </div>
+
+      {/* Incoming tasks — response needed */}
+      {incomingTasks.length > 0 && (
+        <div>
+          <h2 className="text-xs font-bold text-ink-3 uppercase tracking-wider mb-2">
+            📨 Response Needed ({incomingTasks.length})
+          </h2>
+          <div className="space-y-3">
+            {incomingTasks.map((task) => (
+              <IncomingTaskCard
+                key={task.id}
+                task={task}
+                creatorName={getCreatorName(task)}
+                onAccept={handleAccept}
+                onReject={handleReject}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Person tabs */}
       <div className="flex gap-2 overflow-x-auto pb-0.5 no-scrollbar">
@@ -190,7 +255,7 @@ export default function Tasks() {
         <div className="flex justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-lavender" />
         </div>
-      ) : assigneeFiltered.length === 0 ? (
+      ) : activeTasks.length === 0 && doneTasks.length === 0 ? (
         <div className="text-center py-16">
           <div className="text-5xl mb-4">📋</div>
           <p className="text-ink-3 font-medium">
@@ -208,9 +273,11 @@ export default function Tasks() {
               key={task.id}
               task={task}
               kids={kidProfiles}
+              currentUserId={user?.id}
               onComplete={handleCompletePress}
               onEdit={handleEdit}
               onDelete={(id) => void deleteTask(id)}
+              onReassign={(t) => { setEditingTask(t); setModalOpen(true); }}
             />
           ))}
 
@@ -228,6 +295,7 @@ export default function Tasks() {
                   key={task.id}
                   task={task}
                   kids={kidProfiles}
+                  currentUserId={user?.id}
                   onComplete={handleCompletePress}
                   onEdit={handleEdit}
                   onDelete={(id) => void deleteTask(id)}
@@ -254,6 +322,7 @@ export default function Tasks() {
         onDelete={editingTask ? handleDelete : undefined}
         task={editingTask}
         kids={kidProfiles}
+        partner={partner}
       />
 
       <RatingModal

@@ -3,6 +3,11 @@ import type { Task, TaskCategory, TaskPriority, TaskRecurrence, ReminderType, Nu
 import { TASK_CATEGORIES, NUDGE_INTERVALS, CATEGORY_ICONS, CATEGORY_LABELS } from '../../utils/taskModels';
 import type { KidProfile } from '../../utils/familyModels';
 
+interface Partner {
+  userId: string;
+  name: string;
+}
+
 interface TaskModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -10,6 +15,7 @@ interface TaskModalProps {
   onDelete?: () => Promise<void>;
   task?: Task | null;
   kids: KidProfile[];
+  partner?: Partner | null;
 }
 
 const KID_COLOR_MAP: Record<string, string> = {
@@ -33,10 +39,13 @@ function nextWeekStr() {
   return d.toISOString().split('T')[0];
 }
 
-export default function TaskModal({ isOpen, onClose, onSave, onDelete, task, kids }: TaskModalProps) {
+type AdultAssignee = 'me' | 'partner' | 'family';
+
+export default function TaskModal({ isOpen, onClose, onSave, onDelete, task, kids, partner }: TaskModalProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [assignees, setAssignees] = useState<string[]>([]);
+  const [adultAssignee, setAdultAssignee] = useState<AdultAssignee>('me');
+  const [kidAssignees, setKidAssignees] = useState<string[]>([]);
   const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState<TaskPriority>('medium');
   const [category, setCategory] = useState<TaskCategory>('other');
@@ -53,7 +62,15 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task, kid
     if (task) {
       setTitle(task.title);
       setDescription(task.description ?? '');
-      setAssignees(task.assignees);
+      // Derive adult assignee from existing task fields
+      if (task.assigned_to_user_id && partner && task.assigned_to_user_id === partner.userId) {
+        setAdultAssignee('partner');
+      } else if (!task.is_private && task.assignees.includes('me')) {
+        setAdultAssignee('family');
+      } else {
+        setAdultAssignee('me');
+      }
+      setKidAssignees(task.assignees.filter((a) => a !== 'me'));
       setDueDate(task.due_date ?? '');
       setPriority(task.priority);
       setCategory(task.category);
@@ -64,7 +81,8 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task, kid
     } else {
       setTitle('');
       setDescription('');
-      setAssignees([]);
+      setAdultAssignee('me');
+      setKidAssignees([]);
       setDueDate('');
       setPriority('medium');
       setCategory('other');
@@ -75,19 +93,40 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task, kid
     }
     setError('');
     setConfirmDelete(false);
-  }, [task, isOpen]);
+  }, [task, isOpen, partner]);
 
   if (!isOpen) return null;
 
-  const toggleAssignee = (id: string) => {
-    setAssignees((prev) =>
+  const toggleKidAssignee = (id: string) => {
+    setKidAssignees((prev) =>
       prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id]
     );
   };
 
   const handleSave = async () => {
     if (!title.trim()) { setError('Title is required.'); return; }
+
+    // Build assignees array and assignment fields from selections
+    const assignees: string[] = [];
+    let assigned_to_user_id: string | null = null;
+    let is_private = false;
+
+    if (adultAssignee === 'me') {
+      assignees.push('me');
+      is_private = true; // personal = private
+    } else if (adultAssignee === 'partner' && partner) {
+      assignees.push('me');
+      assigned_to_user_id = partner.userId;
+      is_private = true; // only visible to creator + assignee
+    } else {
+      // family
+      assignees.push('me');
+      is_private = false;
+    }
+    kidAssignees.forEach((k) => assignees.push(k));
+
     if (assignees.length === 0) { setError('Select at least one assignee.'); return; }
+
     setSaving(true);
     setError('');
     try {
@@ -95,6 +134,8 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task, kid
         title: title.trim(),
         description: description.trim() || null,
         assignees,
+        assigned_to_user_id,
+        is_private,
         due_date: dueDate || null,
         priority,
         category,
@@ -177,32 +218,54 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task, kid
           {/* Assignees */}
           <div className="mb-4">
             <label className="block text-sm font-semibold text-gray-700 mb-2">Assign to *</label>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => toggleAssignee('me')}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium border-2 transition-colors ${
-                  assignees.includes('me')
-                    ? 'bg-lavender text-white border-lavender'
-                    : 'bg-white text-gray-600 border-gray-200'
-                }`}
-              >
-                Me
-              </button>
-              {kids.map((kid) => (
+
+            {/* Adult section */}
+            <div className="flex flex-wrap gap-2 mb-2">
+              {([
+                { key: 'me', label: '🔒 Me (private)' },
+                ...(partner ? [{ key: 'partner', label: `👤 ${partner.name}` }] : []),
+                { key: 'family', label: '👨‍👩‍👧 Family' },
+              ] as { key: AdultAssignee; label: string }[]).map((opt) => (
                 <button
-                  key={kid.id}
-                  onClick={() => toggleAssignee(kid.id)}
-                  className="px-3 py-1.5 rounded-full text-sm font-medium border-2 transition-colors text-white"
-                  style={{
-                    backgroundColor: assignees.includes(kid.id) ? KID_COLOR_MAP[kid.color] : 'transparent',
-                    borderColor: KID_COLOR_MAP[kid.color],
-                    color: assignees.includes(kid.id) ? 'white' : KID_COLOR_MAP[kid.color],
-                  }}
+                  key={opt.key}
+                  onClick={() => setAdultAssignee(opt.key)}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium border-2 transition-colors ${
+                    adultAssignee === opt.key
+                      ? 'bg-lavender text-white border-lavender'
+                      : 'bg-white text-gray-600 border-gray-200'
+                  }`}
                 >
-                  {kid.name}
+                  {opt.label}
                 </button>
               ))}
             </div>
+
+            {/* Partner info banner */}
+            {adultAssignee === 'partner' && (
+              <div className="mb-2 px-3 py-2 bg-lavender/10 border border-lavender/30 rounded-lg text-xs text-lavender">
+                {partner?.name} will be notified and can accept or reject this task.
+              </div>
+            )}
+
+            {/* Kids multi-select */}
+            {kids.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {kids.map((kid) => (
+                  <button
+                    key={kid.id}
+                    onClick={() => toggleKidAssignee(kid.id)}
+                    className="px-3 py-1.5 rounded-full text-sm font-medium border-2 transition-colors"
+                    style={{
+                      backgroundColor: kidAssignees.includes(kid.id) ? KID_COLOR_MAP[kid.color] : 'transparent',
+                      borderColor: KID_COLOR_MAP[kid.color],
+                      color: kidAssignees.includes(kid.id) ? 'white' : KID_COLOR_MAP[kid.color],
+                    }}
+                  >
+                    {kid.name}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Due Date */}

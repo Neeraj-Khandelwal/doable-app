@@ -193,17 +193,39 @@ export default function Rewards() {
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-3">
-                  {sortedKids.map((kid, idx) => (
+                  {sortedKids.map((kid) => (
                     <KidPointsCard
                       key={kid.id}
                       kid={kid}
                       balance={getBalance(kid.id)}
                       earned={pointsEarned[kid.id] ?? 0}
                       spent={pointsSpent[kid.id] ?? 0}
-                      rank={idx + 1}
-                      onGivePoints={isOwner ? () => { setGivePointsKidId(kid.id); setGivePointsOpen(true); } : undefined}
                     />
                   ))}
+                </div>
+              )}
+
+              {isOwner && kidProfiles.length > 0 && (
+                <div
+                  className="rounded-2xl p-4 flex flex-col gap-3"
+                  style={{ background: 'linear-gradient(135deg, #f3f0fd 0%, #fff9e6 100%)', border: '1.5px solid #e0d7fa' }}
+                >
+                  <div className="flex items-start gap-3">
+                    <span className="text-3xl">🌟</span>
+                    <div>
+                      <p className="font-bold text-ink text-sm">Caught a great moment?</p>
+                      <p className="text-xs text-ink-3 mt-0.5 leading-relaxed">
+                        Spot good behavior, a kind act, or extra effort? Give bonus points on the spot — little wins add up!
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => { setGivePointsKidId(undefined); setGivePointsOpen(true); }}
+                    className="w-full py-2.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 active:scale-95 transition-all"
+                    style={{ background: 'linear-gradient(90deg, #7C6FF0, #E8A800)' }}
+                  >
+                    <span>⭐</span> Give Bonus Points
+                  </button>
                 </div>
               )}
 

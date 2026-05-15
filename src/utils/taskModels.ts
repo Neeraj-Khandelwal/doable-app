@@ -1,4 +1,5 @@
 export type TaskPriority = 'high' | 'medium' | 'low';
+export type AssignmentStatus = 'pending_acceptance' | 'accepted' | 'rejected';
 export type TaskCategory = 'home' | 'work' | 'health' | 'shopping' | 'kids' | 'school' | 'finance' | 'other';
 export type TaskRecurrence = 'none' | 'daily' | 'weekly' | 'monthly';
 export type ReminderType = 'notification' | 'alarm' | 'nudge';
@@ -36,6 +37,12 @@ export interface Task {
   completed_at: string | null;
   ratings: TaskRating[];
   is_overdue: boolean;
+  // Phase 14: assignment workflow
+  assigned_to_user_id: string | null;
+  assignment_status: AssignmentStatus;
+  rejection_reason: string | null;
+  responded_at: string | null;
+  is_private: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -124,6 +131,11 @@ export function createTask(data: Partial<Task>): Task {
     completed_at: data.completed_at ?? null,
     ratings: data.ratings ?? [],
     is_overdue: data.is_overdue ?? false,
+    assigned_to_user_id: data.assigned_to_user_id ?? null,
+    assignment_status: data.assignment_status ?? 'accepted',
+    rejection_reason: data.rejection_reason ?? null,
+    responded_at: data.responded_at ?? null,
+    is_private: data.is_private ?? false,
     created_at: data.created_at ?? now,
     updated_at: data.updated_at ?? now,
   };

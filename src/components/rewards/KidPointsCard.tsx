@@ -18,7 +18,7 @@ interface KidPointsCardProps {
   onGivePoints?: () => void;
 }
 
-export default function KidPointsCard({ kid, balance, earned, spent, rank, onGivePoints }: KidPointsCardProps) {
+export default function KidPointsCard({ kid, balance, earned, spent, onGivePoints }: KidPointsCardProps) {
   const colors = KID_COLOR_MAP[kid.color] ?? KID_COLOR_MAP.lavender;
 
   return (
@@ -26,13 +26,6 @@ export default function KidPointsCard({ kid, balance, earned, spent, rank, onGiv
       className="rounded-2xl p-4 flex flex-col gap-2 relative overflow-hidden"
       style={{ backgroundColor: colors.bg, border: `2px solid ${colors.ring}` }}
     >
-      {/* Rank badge */}
-      {rank !== undefined && rank <= 3 && (
-        <div className="absolute top-3 right-3 text-lg">
-          {rank === 1 ? '🥇' : rank === 2 ? '🥈' : '🥉'}
-        </div>
-      )}
-
       {/* Give points button (owner only) */}
       {onGivePoints && (
         <button

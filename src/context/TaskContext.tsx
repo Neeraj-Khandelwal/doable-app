@@ -27,6 +27,8 @@ type TaskContextValue = {
   deleteTask: (id: string) => Promise<{ error?: string }>;
   markComplete: (id: string) => Promise<{ error?: string }>;
   rateAndComplete: (id: string, ratings: { kid_id: string; rating_type: RatingType }[]) => Promise<{ error?: string }>;
+  acceptTask: (id: string) => Promise<{ error?: string }>;
+  rejectTask: (id: string, reason: string) => Promise<{ error?: string }>;
   refreshTasks: () => Promise<void>;
 };
 
@@ -163,6 +165,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
   const createTask = async (data: Omit<Partial<Task>, 'id' | 'created_at' | 'updated_at'>) => {
     if (!family?.id || !user?.id) return { error: 'Not authenticated' };
 
+    const assignedToUserId = data.assigned_to_user_id ?? null;
     const payload = {
       family_id: family.id,
       created_by: user.id,
@@ -177,6 +180,11 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       category: data.category ?? 'other',
       recurrence: data.recurrence ?? 'none',
       ratings: [],
+      assigned_to_user_id: assignedToUserId,
+      assignment_status: assignedToUserId && assignedToUserId !== user.id ? 'pending_acceptance' : 'accepted',
+      rejection_reason: null,
+      responded_at: null,
+      is_private: data.is_private ?? false,
     };
 
     const { data: created, error: insertError } = await supabase
@@ -273,6 +281,21 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  const acceptTask = async (id: string) => {
+    return updateTask(id, {
+      assignment_status: 'accepted',
+      responded_at: new Date().toISOString(),
+    }).then((r) => ({ error: r.error }));
+  };
+
+  const rejectTask = async (id: string, reason: string) => {
+    return updateTask(id, {
+      assignment_status: 'rejected',
+      rejection_reason: reason || null,
+      responded_at: new Date().toISOString(),
+    }).then((r) => ({ error: r.error }));
+  };
+
   const value: TaskContextValue = {
     tasks,
     loading,
@@ -285,6 +308,8 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     deleteTask,
     markComplete,
     rateAndComplete,
+    acceptTask,
+    rejectTask,
     refreshTasks: fetchTasks,
   };
 
