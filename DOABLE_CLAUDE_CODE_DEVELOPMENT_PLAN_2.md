@@ -1,7 +1,7 @@
 # Doable Android App – Claude Code Development Plan
-**Version:** 1.0  
-**Date:** May 11, 2026  
-**Status:** Ready for Development  
+**Version:** 2.1  
+**Date:** May 16, 2026  
+**Status:** Active Development — Phases 1–14 Complete  
 **Platform:** Android 10+ (API 29+)  
 **Tech Stack:** React + Tailwind CSS + Supabase + Capacitor + EAS Build  
 
@@ -1842,34 +1842,109 @@ Color scheme: peach, lavender, mint, sky, amber, rose"
 
 ---
 
-## Summary
+---
 
-This development plan breaks Doable into 13 manageable phases over 25 days. Each phase has:
-- ✅ Clear objectives
-- ✅ Step-by-step instructions for Claude Code
-- ✅ Specific outputs to verify
-- ✅ Deliverables checklist
-
-**Ready to Start?**
-Begin with Phase 1: Project Initialization. Open Claude Code and follow the instructions step-by-step. After each phase, verify deliverables before moving forward.
-
-**Questions?**
-Ask Claude Code for clarification on any step. It can:
-- Explain concepts
-- Debug issues
-- Refactor code
-- Suggest optimizations
-- Help with Git commits
-
-**Launch Timeline:**
-- Days 1-20: Core feature development
-- Days 21-22: Voice + Android wrap
-- Days 23-24: Build APK, test on device
-- Day 25: Final testing, bug fixes, submission prep
-- Post-Launch: Publish to Google Play Store
+# POST-MVP ENHANCEMENTS (v2.0+)
+*Phases 14+ — captured during user testing of the live app*
 
 ---
 
-**Document Status:** Ready for Development  
-**Last Updated:** May 11, 2026  
-**Next Step:** Begin Phase 1 with Claude Code
+## Enhancement Log
+
+| # | Enhancement | Priority | Phase | Status |
+|---|-------------|----------|-------|--------|
+| 1 | Task Assignment with Accept/Reject + Privacy Controls | High | Phase 14 | ✅ Complete |
+
+*(More enhancements will be added here as testing continues.)*
+
+---
+
+# PHASE 14: Task Assignment & Privacy Model
+*Completed: May 16, 2026 | Priority: High*
+
+## Objective
+
+Enable users to **assign tasks to their partner** (another adult family member), with an **accept/reject workflow**, while enforcing **task-level privacy** so members only see tasks that concern them.
+
+## What Was Built
+
+### Database (`supabase/migrations/014_task_assignment.sql`)
+New columns added to `tasks` table:
+- `assigned_to_user_id` UUID — the adult being assigned the task
+- `assignment_status` TEXT — `pending_acceptance` | `accepted` | `rejected`
+- `rejection_reason` TEXT — optional reason from assignee
+- `responded_at` TIMESTAMPTZ — when the assignee responded
+- `is_private` BOOLEAN — `true` = only creator + assignee can see
+
+Updated RLS `tsk_sel` policy:
+```sql
+created_by = auth.uid()                          -- creator always sees own tasks
+OR assigned_to_user_id = auth.uid()              -- assignee always sees their tasks
+OR (is_private = false AND is_family_member(...)) -- non-private visible to family
+```
+
+### Privacy Rules
+| Scope | `is_private` | `assigned_to_user_id` | Visible to |
+|-------|-------------|----------------------|------------|
+| Me (private) | `true` | `null` | Creator only |
+| Partner assignment | `true` | partner UUID | Creator + partner |
+| Family | `false` | `null` | All family members |
+| Kids | `false` | `null` | All parents |
+
+### Frontend Files Modified/Created
+
+| File | Change |
+|------|--------|
+| `src/utils/taskModels.ts` | Added `AssignmentStatus` type + 5 new fields to `Task` interface |
+| `src/context/TaskContext.tsx` | Updated `createTask` payload; added `acceptTask()` and `rejectTask()` |
+| `src/components/tasks/TaskModal.tsx` | Restructured assignee picker: 🔒 Me / 👤 Partner / 👨‍👩‍👧 Family + kid multi-select; partner info banner |
+| `src/components/tasks/TaskCard.tsx` | 🔒 lock icon; 🕐 pending badge; ✕ rejected badge + Reassign/Delete actions |
+| `src/components/tasks/IncomingTaskCard.tsx` | New — accept/reject UI with inline rejection reason input |
+| `src/pages/Tasks.tsx` | Added "📨 Response Needed" section; wired acceptTask/rejectTask; partner derived from familyMembers |
+
+### Accept/Reject Flow
+```
+User A creates task → assigned_to_user_id = User B → status = pending_acceptance
+     ↓
+User B sees "📨 Response Needed" section at top of Tasks page
+     ↓
+  [✓ Accept]              [✕ Reject]
+  status = accepted       optional reason → status = rejected
+  task moves to list      User A sees rejection + Reassign/Delete options
+```
+
+## Completion Checklist
+- [x] Database migration applied and RLS policies updated
+- [x] Task creation supports assigning to partner with pending status
+- [x] Assignee sees accept/reject prompt in "Response Needed" section
+- [x] Creator sees pending/rejected status badges on task cards
+- [x] Personal tasks private via `is_private = true`
+- [x] Existing tasks unaffected (backfilled with `is_private = false`, `assignment_status = accepted`)
+- [x] Build passes with no TypeScript errors
+- [x] Committed to Git: `feat: task assignment with accept/reject + privacy model (Phase 14)`
+
+## Known Gaps (Future)
+- Push notifications for accept/reject events (Phase 14.6 — not yet built)
+- Partner display name — currently hardcoded as "Partner" (requires `display_name` on `family_members`)
+
+---
+
+## Summary
+
+This plan covers Phases 1–14 of the Doable app. All core MVP phases (1–12) and the first post-MVP enhancement (Phase 14) are complete. Phase 13 (Play Store publication) is next.
+
+**Current Status:**
+- Phases 1–12: ✅ MVP complete
+- Phase 13: ⏳ Play Store — next milestone
+- Phase 14: ✅ Task assignment + privacy complete
+
+**Remaining Work:**
+- Run `supabase/migrations/014_task_assignment.sql` in Supabase SQL Editor (if not done)
+- Phase 13: Generate signed AAB → upload to Play Store
+- Phase 14.6: Push notifications for task assignment workflow
+
+---
+
+**Document Status:** Active Development  
+**Last Updated:** May 16, 2026  
+**Next Step:** Phase 13 — Play Store publication

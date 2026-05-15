@@ -5,10 +5,10 @@
 
 | **Field** | **Value** |
 |-----------|-----------|
-| **Version** | 1.3 — MVP (As-Built) |
-| **Date** | May 13, 2026 |
+| **Version** | 2.0 — Post-MVP Enhancements |
+| **Date** | May 16, 2026 |
 | **Platform** | Android (Google Play Store) |
-| **Status** | In Development — Phase 10 Complete, Phase 11 (Voice) Upcoming |
+| **Status** | Active Development — Phases 1–14 Complete |
 | **Author** | Personal Learning Project |
 | **Built with** | React + TypeScript + Vite + Tailwind CSS v4 + Supabase + Capacitor + EAS Build |
 
@@ -26,13 +26,16 @@ The app is designed for a family of up to 6 members: 2 parents and up to 4 kids.
 - Parents have no easy way to track and reward kids' performance on daily routines
 - Adding tasks while driving is dangerous — voice capture (Phase 11) solves this
 - Fasting tracking needs to be motivational, not clinical
+- Adults need a private space for personal tasks, separate from shared family view
+- Assigning tasks to a partner with no acknowledgement leads to dropped responsibilities
 
 ### 1.2 Goals
 
 - One app for all family productivity needs — tasks, habits, fasting, rewards, alarms, grocery
 - Motivate kids through a transparent points and rewards system
 - Real-time sync between parent devices for shared family tasks
-- **Phase 11:** Zero-friction task creation via voice commands — "OK Google, add task in Doable: ..."
+- **Phase 11 ✅:** Zero-friction task creation via voice commands — "OK Google, add task in Doable: ..."
+- **Phase 14 ✅:** Adult-to-adult task assignment with accept/reject workflow + personal task privacy
 - Build, publish, and launch on Google Play Store
 
 ---
@@ -41,8 +44,8 @@ The app is designed for a family of up to 6 members: 2 parents and up to 4 kids.
 
 | Role | Login | Access | Max |
 |------|-------|--------|-----|
-| **Owner (Creator)** | Yes | Full — habits, personal tasks, family tasks, kids tasks, rewards, alarms, grocery, settings | 1 |
-| **Partner / Spouse** | Yes | Family tasks, shared grocery list, kid task rating | 1 |
+| **Owner (Creator)** | Yes | Full — habits, personal tasks, family tasks, partner-assigned tasks, kids tasks, rewards, alarms, grocery, settings | 1 |
+| **Partner / Spouse** | Yes | Family tasks, tasks assigned to them (accept/reject), shared grocery list, kid task rating | 1 |
 | **Kid** | No | Managed by owner — tasks, habits, reward points tracked by parent | Up to 4 |
 
 ---
@@ -57,11 +60,12 @@ The app is designed for a family of up to 6 members: 2 parents and up to 4 kids.
 | Tasks | 📋 | `/tasks` |
 | Habits | 🎯 | `/habits` |
 | Rewards | 🏆 | `/rewards` |
-| Family | 👨‍👩‍👧‍👦 | `/family` |
+| Family | 👨‍👩‍👧 | `/family` |
 
 ### Header
 
 - **App title:** "Doable" (left)
+- **Mic icon 🎙️** (right) — navigates to `/test-voice` for voice task input
 - **Bell icon 🔔** (right) — navigates to `/alarms`, shows badge count of active task + habit reminders
 - **Avatar** (right) — shows user initials + "Hi, [FirstName]", navigates to `/family`
 
@@ -74,6 +78,8 @@ The app is designed for a family of up to 6 members: 2 parents and up to 4 kids.
 | `/grocery` | Direct URL |
 | `/family-setup` | Post-signup flow |
 | `/join` | Invite link |
+| `/voice-capture` | Deep link from Google Assistant |
+| `/test-voice` | Mic button on Home — voice task testing |
 | `/login`, `/signup`, `/forgot-password`, `/reset-password` | Public |
 
 ---
@@ -81,6 +87,7 @@ The app is designed for a family of up to 6 members: 2 parents and up to 4 kids.
 ### 3.1 Home Screen (`/home`)
 
 - **Greeting header:** "Hey, [FirstName]! 👋" with subtitle "What needs to get done today?"
+- **Top-right icons:** Mic button (→ `/test-voice`) + Bell button (→ `/alarms`)
 - **Quick task creation card:**
   - Text input "What needs to be done?"
   - Assignee pills: Me (lavender) + each kid (their color)
@@ -99,15 +106,37 @@ The app is designed for a family of up to 6 members: 2 parents and up to 4 kids.
 
 ### 3.2 Tasks Screen (`/tasks`)
 
-- **Header:** "Tasks" + count of visible tasks
-- **Tab switcher:** Me · [Kid1] · [Kid2] · ... (filters tasks by assignee)
-- **Filter chips:** All / Active / Done / High Priority
-- **Task cards:** title, assignees (color-coded pills), due date (red if overdue), priority badge, category icon, complete circle
+- **Header:** "Tasks" + count of active tasks
+- **📨 Response Needed section** (shown at top when tasks are pending):
+  - Cards for tasks assigned to the current user with `assignment_status = pending_acceptance`
+  - Shows: task title, description, due date, priority, "From [Partner]" banner
+  - **✓ Accept** (mint) and **✕ Reject** (rose) action buttons
+  - Rejecting shows an optional reason text input before confirming
+- **Person tabs:** Everyone · Me · [Kid1] · [Kid2] · ...
+  - "Me" filter includes tasks where current user is assignee (`assigned_to_user_id`)
+- **Status filter chips:** All / Active / Done / High Priority
+- **Task cards:** title, assignees (color-coded pills), due date, priority badge, category icon, complete circle
+  - 🔒 lock icon on personal (private) tasks
+  - 🕐 amber "Awaiting acceptance" badge for tasks pending partner acceptance (creator view)
+  - ✕ rose "Task rejected" badge with rejection reason + Reassign / Delete actions (creator view)
+  - Partner assignment shown as "→ Partner" badge
 - Completing a personal task calls `markComplete()` directly
 - Completing a kid task opens the rating modal to award points
 - **FAB (+):** opens add task modal
-- **Task modal fields:** Title, Assignees (multi-select pills), Due date, Reminder time, Alert type (Notification / Alarm / Nudge), Nudge interval (5/10/15/30/60 min), Priority (High/Medium/Low), Category, Recurrence (None/Daily/Weekly/Monthly), Description
-- Recurring tasks auto-create next occurrence on completion
+
+**Task modal — Assign to section:**
+| Option | Behaviour |
+|--------|-----------|
+| 🔒 Me (private) | Task visible only to creator — `is_private = true` |
+| 👤 Partner [name] | Notifies partner; `assignment_status = pending_acceptance` |
+| 👨‍👩‍👧 Family | Visible to all family members — `is_private = false` |
+| Kid pills | Multi-select, combined with adult selection |
+
+- When "Partner" is selected, an info banner appears: *"[Partner] will be notified and can accept or reject this task."*
+
+**Task modal — other fields:** Title, Due date, Reminder time, Alert type, Nudge interval, Priority, Category, Recurrence, Description
+
+Recurring tasks auto-create next occurrence on completion.
 
 ---
 
@@ -157,6 +186,7 @@ Combined page with two sub-tabs: **Family** and **Account**
 
 **Family tab — has family:**
 - Invite code card: shows generated code, 📋 "Tap to copy" button (shows "✓ Copied!" feedback)
+- Send invite email: email input + "Send via Email" button opens `mailto:` with code pre-filled
 - Members list: each member shows email, role badge (Owner/Partner), joined date, remove button (owner only)
 - Kids section: add form (collapsible, with name + color picker), each kid shows name, color swatch, edit name/color, remove button
 
@@ -189,12 +219,22 @@ Combined page with two sub-tabs: **Family** and **Account**
 
 ### 3.7 Rewards Screen (`/rewards`)
 
-- Points cards per kid: name, current balance, total earned, points history button
-- **Adhoc award panel:** +/- point input, reason text, "Give Points" button (owner can manually award or deduct)
-- Reward redemption list: each reward shows name, cost, "Redeem" button (enabled if balance ≥ cost, else greyed)
-- Redemption history per kid: date, reward name, points deducted
-- Manage button → Manage Rewards modal (add/edit/delete rewards)
-- Manage Ratings button → Manage Ratings modal (add/edit/delete rating levels)
+Three tabs: **🏆 Points** · **🎁 Store** · **📜 History**
+
+**Points tab (leaderboard):**
+- Kid point cards (2-column grid): name, current balance, earned, spent — no rank medals
+- **⭐ Adhoc Reward section** (owner only): "Caught a great moment?" card with gradient background and a single "⭐ Give Bonus Points" button that opens the Give Points modal
+- Recent Redemptions list
+
+**Store tab:**
+- Reward cards with title, icon, cost; "Redeem" button per kid (enabled if balance ≥ cost)
+- FAB (+) to add new reward (owner only)
+
+**History tab:**
+- Chronological list of all point events (task ratings, streak bonuses, adhoc awards)
+- Each row: icon, reason/title, kid name badge, date, ±points
+
+**Give Points modal:** kid selector, +Award / −Deduct toggle, amount (quick picks + custom), reason (quick picks + custom), save button — reusable across sessions.
 
 ---
 
@@ -209,6 +249,22 @@ Combined page with two sub-tabs: **Family** and **Account**
 
 ---
 
+### 3.9 Voice Task Screens — Phase 11 ✅
+
+**Test Voice (`/test-voice`):**
+- Text input for typing a natural-language command
+- "Preview Parse" button shows parsed result: title, due date, assignees, priority, category
+- "Launch →" button navigates to `/voice-capture?action=add_task&text=...`
+- 8 built-in example commands
+
+**Voice Capture (`/voice-capture`):**
+- Reads URL params; calls `parseDeepLink()` then `parseTaskText()`
+- Opens `TaskModal` pre-populated with parsed values
+- On save: calls `createTask()` then navigates to `/tasks`
+- Handles `invite` action by redirecting to `/join?code=`
+
+---
+
 ## 4. Feature Specifications
 
 ### 4.1 Task Management
@@ -216,7 +272,10 @@ Combined page with two sub-tabs: **Family** and **Account**
 | Field | Detail |
 |-------|--------|
 | Title | Free text — required |
-| Assigned to | Me / any kid / multiple kids (multi-select pills) |
+| Assigned to | Me (private) / Partner (accept/reject) / Family (shared) / kid(s) |
+| Privacy | `is_private = true` → only creator + assignee can see |
+| Assignment status | `pending_acceptance` / `accepted` / `rejected` |
+| Rejection reason | Optional text from assignee |
 | Due date | Date picker (Today / Tomorrow shortcuts) |
 | Reminder time | Time picker — fires browser notification when due |
 | Alert style | Notification / Alarm-style / Repeated nudge |
@@ -226,7 +285,25 @@ Combined page with two sub-tabs: **Family** and **Account**
 | Recurring | None / Daily / Weekly / Monthly — auto-creates next task on completion |
 | Overdue | Computed: due_date < today && !completed_at |
 
-### 4.2 Habit Tracking
+### 4.2 Task Assignment Workflow (Phase 14 ✅)
+
+When User A assigns a task to Partner (User B):
+
+1. Task created with `assignment_status = 'pending_acceptance'`, `assigned_to_user_id = User B`
+2. User B sees "📨 Response Needed" section at top of Tasks page
+3. User B taps **✓ Accept** → status → `accepted`; task moves to active list
+4. User B taps **✕ Reject** → optional reason input → status → `rejected`
+5. User A sees rejected task with reason + Reassign / Delete options
+
+**Privacy rules:**
+| Scope | `is_private` | `assigned_to_user_id` | Visible to |
+|-------|-------------|----------------------|------------|
+| Personal | `true` | `null` | Creator only |
+| Assigned to partner | `true` | partner UUID | Creator + partner |
+| Family | `false` | `null` | All family members |
+| Kids | `false` | `null` | All parents |
+
+### 4.3 Habit Tracking
 
 - Habits can be assigned to Owner ('me') and/or any kid (multi-assignee)
 - Frequency: Daily / Weekdays / Weekends / Custom (pick specific days)
@@ -235,10 +312,8 @@ Combined page with two sub-tabs: **Family** and **Account**
 - Streak counter — computed from consecutive scheduled days with completions
 - **7-day streak bonus:** completing a habit every scheduled day for 7 consecutive days awards +5 bonus points to kid, fires confetti, shows toast
 - Habits reset at midnight — tracked by date strings (YYYY-MM-DD)
-- Marking owner habit done: direct tick + undo
-- Marking kid habit done: increments count, awards bonus if streak milestone
 
-### 4.3 Rating Scale & Points
+### 4.4 Rating Scale & Points
 
 | Rating | Emoji | Points |
 |--------|-------|--------|
@@ -253,7 +328,7 @@ Combined page with two sub-tabs: **Family** and **Account**
 - Adhoc awards/deductions stored in same table (type: `adhoc`)
 - Kid points balance = SUM of all `kid_point_events` for that kid
 
-### 4.4 Redeemable Rewards
+### 4.5 Redeemable Rewards
 
 Default rewards (configurable):
 
@@ -266,7 +341,7 @@ Default rewards (configurable):
 - Rewards stored in `rewards` table, fully configurable (add / edit / delete)
 - On redemption: creates `redemption_history` record, deducts from balance
 
-### 4.5 Intermittent Fasting Tracker
+### 4.6 Intermittent Fasting Tracker
 
 | Stage | Hours | Motivational Message |
 |-------|-------|----------------------|
@@ -282,7 +357,7 @@ Default rewards (configurable):
 - Timer updates every second via `setInterval`
 - Progress ring: SVG `stroke-dashoffset` animation
 
-### 4.6 Standalone Alarms (Phase 10 ✅)
+### 4.7 Standalone Alarms (Phase 10 ✅)
 
 - Created and managed independently of tasks/habits
 - Stored in `alarms` table (user-scoped, not family-scoped)
@@ -291,7 +366,7 @@ Default rewards (configurable):
 - Firing logic: polls every 30 seconds while app is open; uses browser Notification API; deduplicates via localStorage key per alarm+date
 - Enable/disable toggle without deleting the alarm
 
-### 4.7 Task & Habit Reminders
+### 4.8 Task & Habit Reminders
 
 - Task reminders: tasks with `reminder_time` and no `completed_at`
 - Habit reminders: habits with `reminder_time` scheduled for today
@@ -301,39 +376,33 @@ Default rewards (configurable):
   - **Nudge:** re-notifies every X minutes starting from reminder time until task completed
 - Badge count in header bell = active task reminders + active habit reminders
 
-### 4.8 Grocery List
+### 4.9 Grocery List
 
 - Shared between owner and partner (family-scoped)
 - Real-time sync via Supabase Realtime (INSERT / UPDATE / DELETE events)
 - Max 100 items per family
 - Purchased items shown separately with strikethrough; "Clear Purchased" bulk deletes them
 
-### 4.9 Family Collaboration
+### 4.10 Family Collaboration
 
 - Family created by owner with auto-generated 8-character invite code
 - Partner joins via invite code input on `/join` route
+- Owner can send invite code pre-filled in email via `mailto:` link
 - Family data scoped by `family_id` across all tables
 - Supabase Realtime subscription on tasks, grocery items
 - Owner can add/edit/remove kid profiles (name + color)
-- Partner can view and complete shared tasks, rate kid tasks, view grocery list
+- Partner can view and complete shared tasks, accept/reject assigned tasks, rate kid tasks, view grocery list
+- Personal tasks are private — partner cannot see owner's `is_private` tasks and vice versa
 - Profile name saved to `user_profiles` table; falls back to `user_metadata` then email prefix
 
-### 4.10 Voice Task Capture ⭐ Phase 11 — Planned
+### 4.11 Voice Task Capture — Phase 11 ✅
 
-**User Flow:**
-1. User says: "OK Google, add task in Doable: buy milk"
-2. Google Assistant routes to `doable://voice?action=add_task&text=Buy+milk`
-3. App receives deep link (Capacitor.App listener)
-4. Draft task created; push notification fires: "🎙️ Voice task saved — tap to review"
-5. User opens app; Voice Task Modal shows pre-populated fields
-6. User reviews/edits and taps "Save task"
-7. Task saved to Supabase; syncs to all family devices
-
-**Key behaviors:**
-- Hands-free (screen off) — safe while driving
-- All voice input user-reviewed before saving (no auto-save)
-- Task tagged with `created_via: 'google_assistant'`
-- Requires app published on Play Store for App Actions to activate
+**Built components:**
+- `src/utils/taskParser.ts` — natural language parser (title, due date, assignees, priority, category)
+- `src/utils/deepLinkHandler.ts` — parses/builds `doable://` deep link URLs
+- `src/pages/Voice/VoiceCapture.tsx` — receives deep link, pre-populates task modal
+- `src/pages/Voice/TestVoice.tsx` — in-app test harness for voice commands
+- Deep link intent filters in `AndroidManifest.xml` for `doable://` and `https://app.doable.com`
 
 ---
 
@@ -347,7 +416,7 @@ Default rewards (configurable):
 | `family_members` | family_id, user_id, role (owner/partner), joined_at | Family |
 | `user_profiles` | id (= auth user id), full_name | User |
 | `kid_profiles` | id, family_id, name, color | Family |
-| `tasks` | id, family_id, title, assignees[], due_date, reminder_time, reminder_type, nudge_interval, priority, category, recurrence, completed_at, ratings[] | Family |
+| `tasks` | id, family_id, title, assignees[], due_date, reminder_time, reminder_type, nudge_interval, priority, category, recurrence, completed_at, ratings[], **assigned_to_user_id**, **assignment_status**, **rejection_reason**, **responded_at**, **is_private** | Family |
 | `habits` | id, family_id, title, assignees[], frequency, frequency_days[], target_count, icon, reminder_time, is_active | Family |
 | `habit_completions` | id, habit_id, family_id, completed_by, date | Family |
 | `fast_sessions` | id, user_id, family_id, start_time, end_time, goal_minutes | User |
@@ -372,8 +441,8 @@ Default rewards (configurable):
 | `007_grocery.sql` | grocery_items |
 | `009_kid_point_events.sql` | kid_point_events (replaces habit_streak_bonuses) |
 | `010_alarms.sql` | alarms table + patch ALTER TABLEs + schema cache reload |
-
-> **Note:** All tables use `DISABLE ROW LEVEL SECURITY` for development. Enable RLS with proper policies before Play Store launch.
+| `011_fcm_tokens.sql` | FCM push notification tokens |
+| `014_task_assignment.sql` | assigned_to_user_id, assignment_status, rejection_reason, responded_at, is_private — updated RLS |
 
 ---
 
@@ -389,8 +458,8 @@ Default rewards (configurable):
 | **Database** | Supabase PostgreSQL — free tier |
 | **Push notifications** | Firebase Cloud Messaging (FCM) — Phase 12 |
 | **Alarm reminders** | Browser Notification API (web); Capacitor local notifications (Phase 12) |
-| **Voice integration** | Android App Actions — requires Play Store publication (Phase 11) |
-| **Privacy** | Partner cannot access owner personal tasks |
+| **Voice integration** | Android deep links (`doable://`) — Phase 11 ✅ |
+| **Privacy** | Personal tasks (`is_private = true`) only visible to creator; partner tasks visible to creator + assignee only — enforced via RLS |
 | **Family size** | Maximum 6 members: 2 parents + 4 kids |
 
 ---
@@ -408,9 +477,9 @@ Default rewards (configurable):
 | **Charts** | recharts | Fasting history bar chart |
 | **Notifications** | Browser Notification API | Polled every 30s; Capacitor in Phase 12 |
 | **Confetti** | canvas-confetti | Fires on 7-day habit streak bonus |
-| **Android wrapper** | Capacitor | Phase 12 |
-| **Cloud build** | EAS Build (Expo) | Phase 12 — 30 builds/month free tier |
-| **Code hosting** | GitHub | Version control |
+| **Android wrapper** | Capacitor 8.x | Deep links, push notifications, local notifications |
+| **Cloud build** | EAS Build | `eas.json` configured for APK (preview) and AAB (production) |
+| **Code hosting** | GitHub | `Neeraj-Khandelwal/doable-app` |
 | **Play Store** | Google Play Console | $25 one-time — Phase 13 |
 
 ### Color System
@@ -419,10 +488,10 @@ Default rewards (configurable):
 |------|-----|-------|
 | `lavender` | `#7C6FF0` | Primary brand, buttons, active states |
 | `peach` | `#FF8F5E` | Accent |
-| `mint` | `#2EB87A` | Success, habit completion |
+| `mint` | `#2EB87A` | Success, habit completion, accept actions |
 | `sky` | `#2FA8E0` | Info, notifications |
-| `amber` | `#E8A800` | Medium priority, warnings |
-| `rose` | `#E85450` | Errors, high priority, destructive |
+| `amber` | `#E8A800` | Medium priority, warnings, pending states |
+| `rose` | `#E85450` | Errors, high priority, destructive, reject actions |
 
 ---
 
@@ -441,10 +510,12 @@ Default rewards (configurable):
 - More than 6 family members
 - Native alarm sound (requires Capacitor — Phase 12)
 - Background alarm firing when app is closed (requires Capacitor — Phase 12)
+- Partner display name (currently shown as "Partner")
+- Push notifications for task assignment accept/reject (Phase 14.6 — not yet built)
 
 ---
 
-## 9. MVP Success Criteria
+## 9. MVP + Enhancement Success Criteria
 
 | # | Criterion | Status |
 |---|-----------|--------|
@@ -468,9 +539,13 @@ Default rewards (configurable):
 | 18 | 7-day habit streak awards +5 bonus points with confetti | ✅ Built |
 | 19 | Grocery list shared in real time between owner and partner | ✅ Built |
 | 20 | Family + Account merged into single tab; profile name editable | ✅ Built |
-| 21 | Voice command "OK Google, add task in Doable: [text]" creates draft task | ⏳ Phase 11 |
-| 22 | Voice task modal allows review, edit, and save before database commit | ⏳ Phase 11 |
-| 23 | App is published on Google Play Store and installable on Android 10+ | ⏳ Phase 13 |
+| 21 | Voice command deep link creates pre-populated task via VoiceCapture page | ✅ Built |
+| 22 | Voice task modal allows review, edit, and save before database commit | ✅ Built |
+| 23 | Owner can assign task to partner; partner sees accept/reject prompt | ✅ Built |
+| 24 | Personal tasks (Me private) hidden from partner via RLS | ✅ Built |
+| 25 | Rejected task shows reason and Reassign/Delete options to creator | ✅ Built |
+| 26 | Adhoc reward section with "Give Bonus Points" on Rewards leaderboard | ✅ Built |
+| 27 | App is published on Google Play Store and installable on Android 10+ | ⏳ Phase 13 |
 
 ---
 
@@ -488,63 +563,22 @@ Default rewards (configurable):
 | Phase 8 | Grocery list with real-time sync | ✅ Complete |
 | Phase 9 | Navigation cleanup — merged Family+Profile, removed launch grid, added active tasks on home | ✅ Complete |
 | Phase 10 | Standalone alarms with CRUD + AlarmContext + modal | ✅ Complete |
-| Phase 11 | Voice Integration — Google App Actions + Capacitor deep linking | ⏳ Upcoming |
-| Phase 12 | Android wrap — Capacitor, native notifications, APK build | ⏳ Upcoming |
+| Phase 11 | Voice Integration — deep links + taskParser + VoiceCapture + TestVoice | ✅ Complete |
+| Phase 12 | Android wrap — Capacitor, APK build, keystore, EAS config | ✅ Complete |
 | Phase 13 | Play Store — AAB upload, App Actions, store listing | ⏳ Upcoming |
+| Phase 14 | Task assignment with accept/reject + privacy model | ✅ Complete |
 
 ---
 
-## 11. Voice Integration Plan (Phase 11)
-
-### Technical Architecture
-
-| Component | Technology | Purpose |
-|-----------|-----------|---------|
-| Voice Recognition | Google Assistant (cloud) | Processes spoken words |
-| App Routing | Android App Actions | Routes voice commands to app |
-| Deep Linking | Custom URI scheme `doable://voice` | Passes task text to app |
-| Event Listener | Capacitor.App | Listens for deep link events |
-| Draft Creation | `useVoiceCapture` hook | Parses parameters, creates draft |
-| UI Component | `VoiceTaskModal` | Review and edit interface |
-| Storage | Supabase PostgreSQL | Persists final task |
-| Notifications | Capacitor.LocalNotifications | Alerts user to review task |
-
-### Supported Voice Commands
-
-```
-"OK Google, add task in Doable: buy milk"
-"OK Google, add task in Doable: homework for Mayra tomorrow"
-"OK Google, add task in Doable: meeting at 2pm, high priority"
-"OK Google, add task in Doable: pick up kids 3pm reminder every 10 minutes"
-```
-
-### Implementation Checklist
-
-- [ ] `actions.xml` — Google App Actions routing
-- [ ] `AndroidManifest.xml` — intent filters for `doable://voice`
-- [ ] `capacitor.config.ts` — deep link schema
-- [ ] `useVoiceCapture` hook — parse URL params, create draft
-- [ ] `VoiceTaskModal` component — review/edit UI
-- [ ] `@capacitor/app` — deep link listener
-- [ ] `@capacitor/local-notifications` — notify user of pending voice task
-
-### Limitations
-
-- Requires app published on Play Store (App Actions activate after publication)
-- Android 10+ only
-- Google Assistant must be set as default assistant
-- English only for v1.0
-- Cloud processing — requires internet connection
-
----
-
-## 12. Future Roadmap
+## 11. Future Roadmap
 
 ### v1.1 (Q3 2026)
 - Dark mode support
 - Multi-language support (Spanish, French, German)
 - Calendar view for tasks and habits
 - Task templates
+- Push notifications for task assignment accept/reject (Phase 14.6)
+- Partner display name stored and shown in assignment flow
 
 ### v1.2 (Q4 2026)
 - Voice command for marking tasks done: "OK Google, mark [task] done in Doable"
@@ -561,15 +595,16 @@ Default rewards (configurable):
 
 ---
 
-## 13. Success Metrics
+## 12. Success Metrics
 
 | Metric | Target |
 |--------|--------|
-| Feature completion | 20/23 MVP criteria met before Phase 11 |
+| Feature completion | 26/27 criteria met |
 | App rating | 4.5+ stars on Play Store |
 | Real-time sync latency | < 3 seconds |
 | Daily active users | 100+ by month 3 |
 | Voice adoption (post Phase 11) | 30% of users within first week |
+| Task assignment usage | 50% of partner families use assign feature |
 
 ---
 
@@ -578,9 +613,9 @@ Default rewards (configurable):
 | Field | Value |
 |-------|-------|
 | **Prepared by** | Personal Learning Project |
-| **Status** | Phase 10 complete — Phase 11 (Voice) next |
-| **Last updated** | May 13, 2026 |
-| **Next review** | After Phase 11 completion |
+| **Status** | Phases 1–14 complete — Phase 13 (Play Store) next |
+| **Last updated** | May 16, 2026 |
+| **Next review** | After Phase 13 completion |
 
 ---
 
