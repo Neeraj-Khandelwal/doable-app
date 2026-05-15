@@ -102,7 +102,7 @@ export async function scheduleAlarmNotification(
     // One-time: fire at the next occurrence of this HH:MM
     const at = nextOccurrence(hour, minute);
     await LocalNotifications.schedule({
-      notifications: [{ id: notifId, title, body, schedule: { at } }],
+      notifications: [{ id: notifId, title, body, schedule: { at, allowWhileIdle: true } }],
     });
   } else {
     // Recurring: schedule one entry per repeat day (Capacitor IDs must be unique)
@@ -149,7 +149,7 @@ export async function scheduleReminderNotification(
   if (nudgeIntervalMinutes <= 0) {
     const at = nextOccurrence(hour, minute);
     await LocalNotifications.schedule({
-      notifications: [{ id: notifId, title, body, schedule: { at } }],
+      notifications: [{ id: notifId, title, body, schedule: { at, allowWhileIdle: true } }],
     });
   } else {
     // Schedule the initial + nudge notifications for today (up to 8 nudges)
@@ -161,7 +161,7 @@ export async function scheduleReminderNotification(
       const m = totalMinutes % 60;
       if (h >= 24) break;
       const at = nextOccurrence(h, m);
-      notifications.push({ id: notifId + i, title: i === 0 ? title : `📳 ${title}`, body, schedule: { at } });
+      notifications.push({ id: notifId + i, title: i === 0 ? title : `📳 ${title}`, body, schedule: { at, allowWhileIdle: true } });
     }
     await LocalNotifications.schedule({ notifications });
   }

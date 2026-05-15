@@ -269,7 +269,7 @@ export default function Alarms() {
     };
 
     check();
-    const interval = setInterval(check, 30_000);
+    const interval = setInterval(check, 15_000);
     return () => clearInterval(interval);
   }, [permission, allReminders, nudgeReminders, alarms, today, fire]);
 
