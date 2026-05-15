@@ -5,6 +5,9 @@ const config: CapacitorConfig = {
   appName: 'Doable',
   webDir: 'dist',
   plugins: {
+    App: {
+      url: ['doable://', 'https://app.doable.com'],
+    },
     PushNotifications: {
       presentationOptions: ['badge', 'sound', 'alert'],
     },

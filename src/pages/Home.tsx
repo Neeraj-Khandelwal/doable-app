@@ -126,10 +126,23 @@ export default function Home() {
           </h1>
           <p className="text-sm text-ink-3 mt-0.5">What needs to get done today?</p>
         </div>
-        {/* Alarms bell */}
+        {/* Voice + Alarms */}
+        <div className="flex items-center gap-1 -mr-1">
+        <button
+          onClick={() => navigate('/test-voice')}
+          className="p-2 rounded-xl hover:bg-bg-deep transition-colors"
+          aria-label="Voice task"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round"
+            className="w-6 h-6 text-ink-2">
+            <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
+            <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8" />
+          </svg>
+        </button>
         <button
           onClick={() => navigate('/alarms')}
-          className="relative p-2 -mr-1 rounded-xl hover:bg-bg-deep transition-colors"
+          className="relative p-2 rounded-xl hover:bg-bg-deep transition-colors"
           aria-label="Alarms"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -143,6 +156,7 @@ export default function Home() {
             </span>
           )}
         </button>
+        </div>
       </div>
 
       {/* ── QUICK TASK CREATION ── */}

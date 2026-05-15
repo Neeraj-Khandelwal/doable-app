@@ -100,7 +100,7 @@ const Layout = ({ children }: { children: ReactNode }) => {
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50">
+      <nav className="fixed bottom-0 left-0 right-0 z-40">
         <div className="max-w-md mx-auto bg-[rgba(255,251,242,0.94)] backdrop-blur-xl border-t border-line flex justify-around items-center px-1 pt-2 pb-5">
           {navItems.map((item) => {
             const isActive = item.matchPaths.some(

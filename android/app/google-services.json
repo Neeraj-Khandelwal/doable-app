@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "833835486150",
+    "project_id": "doable-6bb2c",
+    "storage_bucket": "doable-6bb2c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:833835486150:android:97b33f6b586ce0b15c00c7",
+        "android_client_info": {
+          "package_name": "com.doable.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyClYPHXzI2GTzJ3Pf9CrGjQpRuh1QvZqJY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

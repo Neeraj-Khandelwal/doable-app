@@ -44,6 +44,8 @@ export default function Family() {
   const [running, setRunning] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteSending, setInviteSending] = useState(false);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -94,6 +96,21 @@ export default function Family() {
     await navigator.clipboard.writeText(family.invite_code);
     setCodeCopied(true);
     setTimeout(() => setCodeCopied(false), 2000);
+  };
+
+  const handleSendInviteEmail = async () => {
+    if (!inviteEmail.trim() || !family?.invite_code) return;
+    setInviteSending(true);
+    // Build a mailto link as a reliable cross-platform fallback.
+    // A proper edge-function email can be wired up later.
+    const subject = encodeURIComponent(`Join my family on Doable`);
+    const body = encodeURIComponent(
+      `Hey! I'd like you to join my family on Doable.\n\nUse invite code: ${family.invite_code}\n\nDownload the app and enter this code on the Family screen.`
+    );
+    window.open(`mailto:${inviteEmail.trim()}?subject=${subject}&body=${body}`);
+    showToast(`Invite opened for ${inviteEmail.trim()}`);
+    setInviteEmail('');
+    setInviteSending(false);
   };
 
   const handleAddKid = async () => {
@@ -262,6 +279,30 @@ export default function Family() {
                     {codeCopied ? '✓ Copied!' : '📋 Copy'}
                   </span>
                 </button>
+
+                {/* Send invite by email */}
+                {isOwner && (
+                  <div className="pt-1 space-y-2">
+                    <p className="text-xs text-ink-4">Or send invite by email</p>
+                    <div className="flex gap-2">
+                      <input
+                        type="email"
+                        value={inviteEmail}
+                        onChange={(e) => setInviteEmail(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && void handleSendInviteEmail()}
+                        placeholder="partner@email.com"
+                        className="flex-1 px-3 py-2.5 border border-line rounded-xl text-sm text-ink placeholder-ink-4 focus:outline-none focus:ring-2 focus:ring-lavender bg-bg-deep"
+                      />
+                      <button
+                        onClick={() => void handleSendInviteEmail()}
+                        disabled={inviteSending || !inviteEmail.trim()}
+                        className="px-4 py-2 bg-lavender text-white rounded-xl text-sm font-bold disabled:opacity-40 hover:opacity-90 transition-opacity"
+                      >
+                        Send
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Members */}

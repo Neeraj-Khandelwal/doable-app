@@ -23,3 +23,10 @@ npm-debug.log*
 
 # Claude Code local settings
 .claude/
+
+# Android signing key — never commit
+*.keystore
+*.jks
+
+# Android Studio IDE files
+.idea/

@@ -23,6 +23,8 @@ import Family from './pages/Family';
 import FamilySetup from './pages/FamilySetup';
 import JoinFamily from './pages/FamilySetup/JoinFamily';
 import FamilySettings from './pages/Family/Settings';
+import VoiceCapture from './pages/Voice/VoiceCapture';
+import TestVoice from './pages/Voice/TestVoice';
 
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -58,6 +60,8 @@ const AppRoutes = () => {
       <Route path="/join" element={<ProtectedRoute><JoinFamily /></ProtectedRoute>} />
       <Route path="/family/settings" element={<ProtectedRoute><FamilySettings /></ProtectedRoute>} />
       <Route path="/family-setup" element={<ProtectedRoute><FamilySetup /></ProtectedRoute>} />
+      <Route path="/voice-capture" element={<ProtectedRoute><VoiceCapture /></ProtectedRoute>} />
+      <Route path="/test-voice" element={<ProtectedRoute><Layout><TestVoice /></Layout></ProtectedRoute>} />
       <Route path="/" element={<Navigate to="/home" />} />
     </Routes>
   );
