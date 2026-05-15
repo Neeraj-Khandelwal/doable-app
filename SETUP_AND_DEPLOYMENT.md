@@ -45,9 +45,16 @@ Edit `.env` with your credentials:
 |----------|-------------|
 | `VITE_SUPABASE_URL` | Your Supabase project URL (e.g. `https://xyz.supabase.co`) |
 | `VITE_SUPABASE_ANON_KEY` | Your Supabase anonymous/public key |
-| `VITE_FIREBASE_API_KEY` | Firebase API key (used for push notifications) |
+| `VITE_FIREBASE_API_KEY` | Firebase API key (used for push notifications – optional for local dev) |
 
 You can find Supabase credentials in your Supabase dashboard under **Settings → API**.
+
+**Firebase setup (optional – only needed for push notifications):**
+
+1. Create a project in the [Firebase Console](https://console.firebase.google.com).
+2. Add an Android app with package name `com.doable.app`.
+3. Download `google-services.json` and place it in `android/app/`.
+4. Copy the **Web API Key** from Firebase project settings into `VITE_FIREBASE_API_KEY`.
 
 ### 4. Set Up Supabase Database
 
@@ -61,7 +68,7 @@ supabase/migrations/004_rewards.sql
 supabase/migrations/005_rating_config.sql
 supabase/migrations/006_fasting.sql
 supabase/migrations/007_grocery.sql
-supabase/migrations/009_kid_point_events.sql
+supabase/migrations/009_kid_point_events.sql   # Note: 008 was removed/consolidated
 supabase/migrations/010_alarms.sql
 supabase/migrations/011_fcm_tokens.sql
 ```
