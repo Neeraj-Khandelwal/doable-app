@@ -1,0 +1,327 @@
+diff --git a/node_modules/@capgo/capacitor-alarm/android/build/.transforms/54dc5c706dd24b956435061f9ac57a0c/results.bin b/node_modules/@capgo/capacitor-alarm/android/build/.transforms/54dc5c706dd24b956435061f9ac57a0c/results.bin
+new file mode 100644
+index 0000000..0d259dd
+--- /dev/null
++++ b/node_modules/@capgo/capacitor-alarm/android/build/.transforms/54dc5c706dd24b956435061f9ac57a0c/results.bin
+@@ -0,0 +1 @@
++o/classes
+diff --git a/node_modules/@capgo/capacitor-alarm/android/build/.transforms/54dc5c706dd24b956435061f9ac57a0c/transformed/classes/classes_dex/classes.dex b/node_modules/@capgo/capacitor-alarm/android/build/.transforms/54dc5c706dd24b956435061f9ac57a0c/transformed/classes/classes_dex/classes.dex
+new file mode 100644
+index 0000000..c08fb8a
+Binary files /dev/null and b/node_modules/@capgo/capacitor-alarm/android/build/.transforms/54dc5c706dd24b956435061f9ac57a0c/transformed/classes/classes_dex/classes.dex differ
+diff --git a/node_modules/@capgo/capacitor-alarm/android/build/.transforms/fc23907a4ed819fcd4297cde37ac6fa9/results.bin b/node_modules/@capgo/capacitor-alarm/android/build/.transforms/fc23907a4ed819fcd4297cde37ac6fa9/results.bin
+new file mode 100644
+index 0000000..7ed749e
+--- /dev/null
++++ b/node_modules/@capgo/capacitor-alarm/android/build/.transforms/fc23907a4ed819fcd4297cde37ac6fa9/results.bin
+@@ -0,0 +1 @@
++o/bundleLibRuntimeToDirDebug
+diff --git a/node_modules/@capgo/capacitor-alarm/android/build/.transforms/fc23907a4ed819fcd4297cde37ac6fa9/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/app/capgo/capacitor/alarm/CapgoAlarmPlugin.dex b/node_modules/@capgo/capacitor-alarm/android/build/.transforms/fc23907a4ed819fcd4297cde37ac6fa9/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/app/capgo/capacitor/alarm/CapgoAlarmPlugin.dex
+new file mode 100644
+index 0000000..c08fb8a
+Binary files /dev/null and b/node_modules/@capgo/capacitor-alarm/android/build/.transforms/fc23907a4ed819fcd4297cde37ac6fa9/transformed/bundleLibRuntimeToDirDebug/bundleLibRuntimeToDirDebug_dex/app/capgo/capacitor/alarm/CapgoAlarmPlugin.dex differ
+diff --git a/node_modules/@capgo/capacitor-alarm/android/build/.transforms/fc23907a4ed819fcd4297cde37ac6fa9/transformed/bundleLibRuntimeToDirDebug/desugar_graph.bin b/node_modules/@capgo/capacitor-alarm/android/build/.transforms/fc23907a4ed819fcd4297cde37ac6fa9/transformed/bundleLibRuntimeToDirDebug/desugar_graph.bin
+new file mode 100644
+index 0000000..601f245
+Binary files /dev/null and b/node_modules/@capgo/capacitor-alarm/android/build/.transforms/fc23907a4ed819fcd4297cde37ac6fa9/transformed/bundleLibRuntimeToDirDebug/desugar_graph.bin differ
+diff --git a/node_modules/@capgo/capacitor-alarm/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/AndroidManifest.xml b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/AndroidManifest.xml
+new file mode 100644
+index 0000000..a7df0ad
+--- /dev/null
++++ b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/AndroidManifest.xml
+@@ -0,0 +1,7 @@
++<?xml version="1.0" encoding="utf-8"?>
++<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++    package="app.capgo.capacitor.alarm" >
++
++    <uses-sdk android:minSdkVersion="24" />
++
++</manifest>
+\ No newline at end of file
+diff --git a/node_modules/@capgo/capacitor-alarm/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/output-metadata.json b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/output-metadata.json
+new file mode 100644
+index 0000000..4fcb515
+--- /dev/null
++++ b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/output-metadata.json
+@@ -0,0 +1,18 @@
++{
++  "version": 3,
++  "artifactType": {
++    "type": "AAPT_FRIENDLY_MERGED_MANIFESTS",
++    "kind": "Directory"
++  },
++  "applicationId": "app.capgo.capacitor.alarm",
++  "variantName": "debug",
++  "elements": [
++    {
++      "type": "SINGLE",
++      "filters": [],
++      "attributes": [],
++      "outputFile": "AndroidManifest.xml"
++    }
++  ],
++  "elementType": "File"
++}
+\ No newline at end of file
+diff --git a/node_modules/@capgo/capacitor-alarm/android/build/intermediates/aar_main_jar/debug/syncDebugLibJars/classes.jar b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/aar_main_jar/debug/syncDebugLibJars/classes.jar
+new file mode 100644
+index 0000000..bc49a27
+Binary files /dev/null and b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/aar_main_jar/debug/syncDebugLibJars/classes.jar differ
+diff --git a/node_modules/@capgo/capacitor-alarm/android/build/intermediates/aar_metadata/debug/writeDebugAarMetadata/aar-metadata.properties b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/aar_metadata/debug/writeDebugAarMetadata/aar-metadata.properties
+new file mode 100644
+index 0000000..1211b1e
+--- /dev/null
++++ b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/aar_metadata/debug/writeDebugAarMetadata/aar-metadata.properties
+@@ -0,0 +1,6 @@
++aarFormatVersion=1.0
++aarMetadataVersion=1.0
++minCompileSdk=1
++minCompileSdkExtension=0
++minAndroidGradlePluginVersion=1.0.0
++coreLibraryDesugaringEnabled=false
+diff --git a/node_modules/@capgo/capacitor-alarm/android/build/intermediates/annotation_processor_list/debug/javaPreCompileDebug/annotationProcessors.json b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/annotation_processor_list/debug/javaPreCompileDebug/annotationProcessors.json
+new file mode 100644
+index 0000000..9e26dfe
+--- /dev/null
++++ b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/annotation_processor_list/debug/javaPreCompileDebug/annotationProcessors.json
+@@ -0,0 +1 @@
++{}
+\ No newline at end of file
+diff --git a/node_modules/@capgo/capacitor-alarm/android/build/intermediates/annotations_typedef_file/debug/extractDebugAnnotations/typedefs.txt b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/annotations_typedef_file/debug/extractDebugAnnotations/typedefs.txt
+new file mode 100644
+index 0000000..e69de29
+diff --git a/node_modules/@capgo/capacitor-alarm/android/build/intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar
+new file mode 100644
+index 0000000..ea2b18c
+Binary files /dev/null and b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar differ
+diff --git a/node_modules/@capgo/capacitor-alarm/android/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar
+new file mode 100644
+index 0000000..4c3e510
+Binary files /dev/null and b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar differ
+diff --git a/node_modules/@capgo/capacitor-alarm/android/build/intermediates/compile_symbol_list/debug/generateDebugRFile/R.txt b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/compile_symbol_list/debug/generateDebugRFile/R.txt
+new file mode 100644
+index 0000000..e69de29
+diff --git a/node_modules/@capgo/capacitor-alarm/android/build/intermediates/incremental/debug-mergeJavaRes/merge-state b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/incremental/debug-mergeJavaRes/merge-state
+new file mode 100644
+index 0000000..1c983fc
+Binary files /dev/null and b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/incremental/debug-mergeJavaRes/merge-state differ
+diff --git a/node_modules/@capgo/capacitor-alarm/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties
+new file mode 100644
+index 0000000..252b60e
+--- /dev/null
++++ b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties
+@@ -0,0 +1 @@
++#Fri May 15 21:16:35 IST 2026
+diff --git a/node_modules/@capgo/capacitor-alarm/android/build/intermediates/incremental/debug/packageDebugResources/merger.xml b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/incremental/debug/packageDebugResources/merger.xml
+new file mode 100644
+index 0000000..2cad6b7
+--- /dev/null
++++ b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/incremental/debug/packageDebugResources/merger.xml
+@@ -0,0 +1,2 @@
++<?xml version="1.0" encoding="utf-8"?>
++<merger version="3"><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="main$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/pankaj.khandelwal/doable-app/node_modules/@capgo/capacitor-alarm/android/src/main/res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="main" generated-set="main$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~:!&lt;dir>navigation"><source path="/Users/pankaj.khandelwal/doable-app/node_modules/@capgo/capacitor-alarm/android/src/main/res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="debug$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/pankaj.khandelwal/doable-app/node_modules/@capgo/capacitor-alarm/android/src/debug/res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="debug" generated-set="debug$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~:!&lt;dir>navigation"><source path="/Users/pankaj.khandelwal/doable-app/node_modules/@capgo/capacitor-alarm/android/src/debug/res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="generated$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/pankaj.khandelwal/doable-app/node_modules/@capgo/capacitor-alarm/android/build/generated/res/resValues/debug"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="generated" generated-set="generated$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~:!&lt;dir>navigation"><source path="/Users/pankaj.khandelwal/doable-app/node_modules/@capgo/capacitor-alarm/android/build/generated/res/resValues/debug"/></dataSet><mergedItems/></merger>
+\ No newline at end of file
+diff --git a/node_modules/@capgo/capacitor-alarm/android/build/intermediates/incremental/mergeDebugAssets/merger.xml b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/incremental/mergeDebugAssets/merger.xml
+new file mode 100644
+index 0000000..7c7e0bc
+--- /dev/null
++++ b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/incremental/mergeDebugAssets/merger.xml
+@@ -0,0 +1,2 @@
++<?xml version="1.0" encoding="utf-8"?>
++<merger version="3"><dataSet config="main" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/pankaj.khandelwal/doable-app/node_modules/@capgo/capacitor-alarm/android/src/main/assets"/></dataSet><dataSet config="debug" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/pankaj.khandelwal/doable-app/node_modules/@capgo/capacitor-alarm/android/src/debug/assets"/></dataSet><dataSet config="generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/pankaj.khandelwal/doable-app/node_modules/@capgo/capacitor-alarm/android/build/intermediates/shader_assets/debug/compileDebugShaders/out"/></dataSet></merger>
+\ No newline at end of file
+diff --git a/node_modules/@capgo/capacitor-alarm/android/build/intermediates/incremental/mergeDebugJniLibFolders/merger.xml b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/incremental/mergeDebugJniLibFolders/merger.xml
+new file mode 100644
+index 0000000..a70ff70
+--- /dev/null
++++ b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/incremental/mergeDebugJniLibFolders/merger.xml
+@@ -0,0 +1,2 @@
++<?xml version="1.0" encoding="utf-8"?>
++<merger version="3"><dataSet config="main" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/pankaj.khandelwal/doable-app/node_modules/@capgo/capacitor-alarm/android/src/main/jniLibs"/></dataSet><dataSet config="debug" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/pankaj.khandelwal/doable-app/node_modules/@capgo/capacitor-alarm/android/src/debug/jniLibs"/></dataSet></merger>
+\ No newline at end of file
+diff --git a/node_modules/@capgo/capacitor-alarm/android/build/intermediates/incremental/mergeDebugShaders/merger.xml b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/incremental/mergeDebugShaders/merger.xml
+new file mode 100644
+index 0000000..c751bb8
+--- /dev/null
++++ b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/incremental/mergeDebugShaders/merger.xml
+@@ -0,0 +1,2 @@
++<?xml version="1.0" encoding="utf-8"?>
++<merger version="3"><dataSet config="main" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/pankaj.khandelwal/doable-app/node_modules/@capgo/capacitor-alarm/android/src/main/shaders"/></dataSet><dataSet config="debug" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/Users/pankaj.khandelwal/doable-app/node_modules/@capgo/capacitor-alarm/android/src/debug/shaders"/></dataSet></merger>
+\ No newline at end of file
+diff --git a/node_modules/@capgo/capacitor-alarm/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/app/capgo/capacitor/alarm/CapgoAlarmPlugin.class b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/app/capgo/capacitor/alarm/CapgoAlarmPlugin.class
+new file mode 100644
+index 0000000..7e0c70f
+Binary files /dev/null and b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/app/capgo/capacitor/alarm/CapgoAlarmPlugin.class differ
+diff --git a/node_modules/@capgo/capacitor-alarm/android/build/intermediates/local_only_symbol_list/debug/parseDebugLocalResources/R-def.txt b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/local_only_symbol_list/debug/parseDebugLocalResources/R-def.txt
+new file mode 100644
+index 0000000..78ac5b8
+--- /dev/null
++++ b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/local_only_symbol_list/debug/parseDebugLocalResources/R-def.txt
+@@ -0,0 +1,2 @@
++R_DEF: Internal format may change without notice
++local
+diff --git a/node_modules/@capgo/capacitor-alarm/android/build/intermediates/manifest_merge_blame_file/debug/processDebugManifest/manifest-merger-blame-debug-report.txt b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/manifest_merge_blame_file/debug/processDebugManifest/manifest-merger-blame-debug-report.txt
+new file mode 100644
+index 0000000..8189e81
+--- /dev/null
++++ b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/manifest_merge_blame_file/debug/processDebugManifest/manifest-merger-blame-debug-report.txt
+@@ -0,0 +1,7 @@
++1<?xml version="1.0" encoding="utf-8"?>
++2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++3    package="app.capgo.capacitor.alarm" >
++4
++5    <uses-sdk android:minSdkVersion="24" />
++6
++7</manifest>
+diff --git a/node_modules/@capgo/capacitor-alarm/android/build/intermediates/merged_java_res/debug/mergeDebugJavaResource/feature-capgo-capacitor-alarm.jar b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/merged_java_res/debug/mergeDebugJavaResource/feature-capgo-capacitor-alarm.jar
+new file mode 100644
+index 0000000..15cb0ec
+Binary files /dev/null and b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/merged_java_res/debug/mergeDebugJavaResource/feature-capgo-capacitor-alarm.jar differ
+diff --git a/node_modules/@capgo/capacitor-alarm/android/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml
+new file mode 100644
+index 0000000..a7df0ad
+--- /dev/null
++++ b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml
+@@ -0,0 +1,7 @@
++<?xml version="1.0" encoding="utf-8"?>
++<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++    package="app.capgo.capacitor.alarm" >
++
++    <uses-sdk android:minSdkVersion="24" />
++
++</manifest>
+\ No newline at end of file
+diff --git a/node_modules/@capgo/capacitor-alarm/android/build/intermediates/navigation_json/debug/extractDeepLinksDebug/navigation.json b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/navigation_json/debug/extractDeepLinksDebug/navigation.json
+new file mode 100644
+index 0000000..0637a08
+--- /dev/null
++++ b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/navigation_json/debug/extractDeepLinksDebug/navigation.json
+@@ -0,0 +1 @@
++[]
+\ No newline at end of file
+diff --git a/node_modules/@capgo/capacitor-alarm/android/build/intermediates/nested_resources_validation_report/debug/generateDebugResources/nestedResourcesValidationReport.txt b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/nested_resources_validation_report/debug/generateDebugResources/nestedResourcesValidationReport.txt
+new file mode 100644
+index 0000000..08f4ebe
+--- /dev/null
++++ b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/nested_resources_validation_report/debug/generateDebugResources/nestedResourcesValidationReport.txt
+@@ -0,0 +1 @@
++0 Warning/Error
+\ No newline at end of file
+diff --git a/node_modules/@capgo/capacitor-alarm/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/app/capgo/capacitor/alarm/CapgoAlarmPlugin.class b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/app/capgo/capacitor/alarm/CapgoAlarmPlugin.class
+new file mode 100644
+index 0000000..7e0c70f
+Binary files /dev/null and b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/runtime_library_classes_dir/debug/bundleLibRuntimeToDirDebug/app/capgo/capacitor/alarm/CapgoAlarmPlugin.class differ
+diff --git a/node_modules/@capgo/capacitor-alarm/android/build/intermediates/runtime_library_classes_jar/debug/bundleLibRuntimeToJarDebug/classes.jar b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/runtime_library_classes_jar/debug/bundleLibRuntimeToJarDebug/classes.jar
+new file mode 100644
+index 0000000..b74d577
+Binary files /dev/null and b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/runtime_library_classes_jar/debug/bundleLibRuntimeToJarDebug/classes.jar differ
+diff --git a/node_modules/@capgo/capacitor-alarm/android/build/intermediates/symbol_list_with_package_name/debug/generateDebugRFile/package-aware-r.txt b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/symbol_list_with_package_name/debug/generateDebugRFile/package-aware-r.txt
+new file mode 100644
+index 0000000..0163001
+--- /dev/null
++++ b/node_modules/@capgo/capacitor-alarm/android/build/intermediates/symbol_list_with_package_name/debug/generateDebugRFile/package-aware-r.txt
+@@ -0,0 +1 @@
++app.capgo.capacitor.alarm
+diff --git a/node_modules/@capgo/capacitor-alarm/android/build/outputs/aar/capgo-capacitor-alarm-debug.aar b/node_modules/@capgo/capacitor-alarm/android/build/outputs/aar/capgo-capacitor-alarm-debug.aar
+new file mode 100644
+index 0000000..cca2651
+Binary files /dev/null and b/node_modules/@capgo/capacitor-alarm/android/build/outputs/aar/capgo-capacitor-alarm-debug.aar differ
+diff --git a/node_modules/@capgo/capacitor-alarm/android/build/outputs/logs/manifest-merger-debug-report.txt b/node_modules/@capgo/capacitor-alarm/android/build/outputs/logs/manifest-merger-debug-report.txt
+new file mode 100644
+index 0000000..26fd5b0
+--- /dev/null
++++ b/node_modules/@capgo/capacitor-alarm/android/build/outputs/logs/manifest-merger-debug-report.txt
+@@ -0,0 +1,16 @@
++-- Merging decision tree log ---
++manifest
++ADDED from /Users/pankaj.khandelwal/doable-app/node_modules/@capgo/capacitor-alarm/android/src/main/AndroidManifest.xml:1:1-2:12
++INJECTED from /Users/pankaj.khandelwal/doable-app/node_modules/@capgo/capacitor-alarm/android/src/main/AndroidManifest.xml:1:1-2:12
++	package
++		INJECTED from /Users/pankaj.khandelwal/doable-app/node_modules/@capgo/capacitor-alarm/android/src/main/AndroidManifest.xml
++	xmlns:android
++		ADDED from /Users/pankaj.khandelwal/doable-app/node_modules/@capgo/capacitor-alarm/android/src/main/AndroidManifest.xml:1:11-69
++uses-sdk
++INJECTED from /Users/pankaj.khandelwal/doable-app/node_modules/@capgo/capacitor-alarm/android/src/main/AndroidManifest.xml reason: use-sdk injection requested
++INJECTED from /Users/pankaj.khandelwal/doable-app/node_modules/@capgo/capacitor-alarm/android/src/main/AndroidManifest.xml
++INJECTED from /Users/pankaj.khandelwal/doable-app/node_modules/@capgo/capacitor-alarm/android/src/main/AndroidManifest.xml
++	android:targetSdkVersion
++		INJECTED from /Users/pankaj.khandelwal/doable-app/node_modules/@capgo/capacitor-alarm/android/src/main/AndroidManifest.xml
++	android:minSdkVersion
++		INJECTED from /Users/pankaj.khandelwal/doable-app/node_modules/@capgo/capacitor-alarm/android/src/main/AndroidManifest.xml
+diff --git a/node_modules/@capgo/capacitor-alarm/android/build/tmp/compileDebugJavaWithJavac/previous-compilation-data.bin b/node_modules/@capgo/capacitor-alarm/android/build/tmp/compileDebugJavaWithJavac/previous-compilation-data.bin
+new file mode 100644
+index 0000000..e142ff5
+Binary files /dev/null and b/node_modules/@capgo/capacitor-alarm/android/build/tmp/compileDebugJavaWithJavac/previous-compilation-data.bin differ
+diff --git a/node_modules/@capgo/capacitor-alarm/android/src/main/java/app/capgo/capacitor/alarm/CapgoAlarmPlugin.java b/node_modules/@capgo/capacitor-alarm/android/src/main/java/app/capgo/capacitor/alarm/CapgoAlarmPlugin.java
+index 8a8ec56..b32e7f3 100644
+--- a/node_modules/@capgo/capacitor-alarm/android/src/main/java/app/capgo/capacitor/alarm/CapgoAlarmPlugin.java
++++ b/node_modules/@capgo/capacitor-alarm/android/src/main/java/app/capgo/capacitor/alarm/CapgoAlarmPlugin.java
+@@ -3,14 +3,17 @@ package app.capgo.capacitor.alarm;
+ import android.app.AlarmManager;
+ import android.content.Context;
+ import android.content.Intent;
++import android.content.pm.PackageManager;
+ import android.os.Build;
+ import android.provider.AlarmClock;
+ import android.util.Log;
++import com.getcapacitor.JSArray;
+ import com.getcapacitor.JSObject;
+ import com.getcapacitor.Plugin;
+ import com.getcapacitor.PluginCall;
+ import com.getcapacitor.PluginMethod;
+ import com.getcapacitor.annotation.CapacitorPlugin;
++import java.util.ArrayList;
+ 
+ @CapacitorPlugin(name = "CapgoAlarm")
+ public class CapgoAlarmPlugin extends Plugin {
+@@ -30,6 +33,7 @@ public class CapgoAlarmPlugin extends Plugin {
+         String label = call.getString("label");
+         boolean skipUi = call.getBoolean("skipUi", false);
+         boolean vibrate = call.getBoolean("vibrate", false);
++        JSArray repeatDays = call.getArray("repeatDays");
+ 
+         Intent intent = new Intent(AlarmClock.ACTION_SET_ALARM)
+             .putExtra(AlarmClock.EXTRA_HOUR, hour)
+@@ -40,6 +44,29 @@ public class CapgoAlarmPlugin extends Plugin {
+         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+ 
+         try {
++            if (repeatDays != null && repeatDays.length() > 0) {
++                ArrayList<Integer> alarmDays = new ArrayList<>();
++                for (int i = 0; i < repeatDays.length(); i++) {
++                    int day = repeatDays.getInt(i);
++                    if (day < 0 || day > 6) {
++                        JSObject ret = new JSObject();
++                        ret.put("success", false);
++                        ret.put("message", "repeatDays values must be integers from 0 (Sunday) to 6 (Saturday)");
++                        call.resolve(ret);
++                        return;
++                    }
++                    alarmDays.add(day + 1);
++                }
++                intent.putExtra(AlarmClock.EXTRA_DAYS, alarmDays);
++            }
++            PackageManager packageManager = getContext().getPackageManager();
++            if (intent.resolveActivity(packageManager) == null) {
++                JSObject ret = new JSObject();
++                ret.put("success", false);
++                ret.put("message", "No Android Clock app can create alarms on this device");
++                call.resolve(ret);
++                return;
++            }
+             getContext().startActivity(intent);
+             JSObject ret = new JSObject();
+             ret.put("success", true);
+diff --git a/node_modules/@capgo/capacitor-alarm/dist/esm/definitions.d.ts b/node_modules/@capgo/capacitor-alarm/dist/esm/definitions.d.ts
+index bdb902f..b43c41a 100644
+--- a/node_modules/@capgo/capacitor-alarm/dist/esm/definitions.d.ts
++++ b/node_modules/@capgo/capacitor-alarm/dist/esm/definitions.d.ts
+@@ -14,6 +14,8 @@ export interface NativeAlarmCreateOptions {
+     skipUi?: boolean;
+     /** Android only: set alarm to vibrate */
+     vibrate?: boolean;
++    /** Android only: repeat alarm on weekdays, 0=Sunday through 6=Saturday */
++    repeatDays?: number[];
+ }
+ /**
+  * Result of a native action.

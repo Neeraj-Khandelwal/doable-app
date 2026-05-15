@@ -14,6 +14,10 @@ import {
   cancelAlarmNotification,
   idFromUuid,
 } from '../services/notificationService';
+import {
+  isAndroidSystemClockAvailable,
+  openSystemClockSetAlarm,
+} from '../services/androidClockAlarm';
 
 type CreateAlarmInput = {
   time: string;
@@ -32,6 +36,50 @@ type AlarmContextValue = {
   deleteAlarm: (id: string) => Promise<{ error?: string }>;
   toggleAlarm: (id: string) => Promise<{ error?: string }>;
 };
+
+type AlarmDeliveryInput = Pick<Alarm, 'id' | 'time' | 'label' | 'repeat_days'>;
+
+/**
+ * Schedules the saved alarm through Android Clock when available, falling back to local notifications.
+ * Call after a successful alarm create/update with the persisted row and optional previous repeat days.
+ * Returns after either native Clock is opened or the notification fallback has been scheduled.
+ */
+async function scheduleAlarmDelivery(
+  alarm: AlarmDeliveryInput,
+  previousRepeatDays?: RepeatDay[],
+): Promise<void> {
+  const notifId = idFromUuid(alarm.id);
+
+  if (isAndroidSystemClockAvailable()) {
+    try {
+      const result = await openSystemClockSetAlarm(
+        alarm.time,
+        alarm.label ?? null,
+        alarm.repeat_days ?? [],
+      );
+
+      if (result.success) {
+        await cancelAlarmNotification(notifId, previousRepeatDays ?? alarm.repeat_days ?? []);
+        return;
+      }
+
+      console.warn('Android Clock alarm creation failed; falling back to local notification:', result.message);
+    } catch (err) {
+      console.warn('Android Clock alarm creation threw; falling back to local notification:', err);
+    }
+  }
+
+  if (previousRepeatDays !== undefined) {
+    await cancelAlarmNotification(notifId, previousRepeatDays);
+  }
+
+  await scheduleAlarmNotification(
+    notifId,
+    alarm.time,
+    alarm.label ?? null,
+    alarm.repeat_days ?? [],
+  );
+}
 
 const AlarmContext = createContext<AlarmContextValue | undefined>(undefined);
 
@@ -73,34 +121,25 @@ export const AlarmProvider = ({ children }: { children: ReactNode }) => {
 
   const createAlarm = async (data: CreateAlarmInput): Promise<{ error?: string }> => {
     if (!user?.id) return { error: 'Not authenticated' };
-    const { error: err } = await supabase.from('alarms').insert([
-      {
-        user_id: user.id,
-        time: data.time,
-        label: data.label ?? null,
-        enabled: data.enabled ?? true,
-        repeat_days: data.repeat_days ?? [],
-        sound: data.sound ?? 'default',
-      },
-    ]);
+    const { data: created, error: err } = await supabase
+      .from('alarms')
+      .insert([
+        {
+          user_id: user.id,
+          time: data.time,
+          label: data.label ?? null,
+          enabled: data.enabled ?? true,
+          repeat_days: data.repeat_days ?? [],
+          sound: data.sound ?? 'default',
+        },
+      ])
+      .select('*')
+      .single();
     if (err) return { error: err.message };
     await fetchAlarms();
 
-    // Schedule local notification on native (fires even when app is closed)
-    const { data: created } = await supabase
-      .from('alarms')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
     if (created && (data.enabled ?? true)) {
-      void scheduleAlarmNotification(
-        idFromUuid(created.id),
-        created.time,
-        created.label ?? null,
-        created.repeat_days ?? [],
-      );
+      await scheduleAlarmDelivery(created as AlarmDeliveryInput);
     }
     return {};
   };
@@ -130,9 +169,9 @@ export const AlarmProvider = ({ children }: { children: ReactNode }) => {
       const merged = { ...updated, ...data };
       const notifId = idFromUuid(id);
       if (merged.enabled) {
-        void scheduleAlarmNotification(notifId, merged.time, merged.label ?? null, merged.repeat_days ?? []);
+        await scheduleAlarmDelivery(merged, updated.repeat_days ?? []);
       } else {
-        void cancelAlarmNotification(notifId, merged.repeat_days ?? []);
+        await cancelAlarmNotification(notifId, updated.repeat_days ?? []);
       }
     }
     return {};
