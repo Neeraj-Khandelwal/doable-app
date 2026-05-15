@@ -12,6 +12,12 @@ export interface RatingOption {
   points: number;
 }
 
+export interface Subtask {
+  id: string;
+  title: string;
+  completed: boolean;
+}
+
 export interface TaskRating {
   kid_id: string;
   rating_type: RatingType;
@@ -36,6 +42,7 @@ export interface Task {
   completed_by: string | null;
   completed_at: string | null;
   ratings: TaskRating[];
+  subtasks: Subtask[];
   is_overdue: boolean;
   // Phase 14: assignment workflow
   assigned_to_user_id: string | null;
@@ -130,6 +137,7 @@ export function createTask(data: Partial<Task>): Task {
     completed_by: data.completed_by ?? null,
     completed_at: data.completed_at ?? null,
     ratings: data.ratings ?? [],
+    subtasks: data.subtasks ?? [],
     is_overdue: data.is_overdue ?? false,
     assigned_to_user_id: data.assigned_to_user_id ?? null,
     assignment_status: data.assignment_status ?? 'accepted',

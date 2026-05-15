@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
-import type { Task, TaskCategory, TaskPriority, TaskRecurrence, ReminderType, NudgeInterval } from '../../utils/taskModels';
+import { useState, useEffect, useRef } from 'react';
+import type { Task, TaskCategory, TaskPriority, TaskRecurrence, ReminderType, NudgeInterval, Subtask } from '../../utils/taskModels';
 import { TASK_CATEGORIES, NUDGE_INTERVALS, CATEGORY_ICONS, CATEGORY_LABELS } from '../../utils/taskModels';
 import type { KidProfile } from '../../utils/familyModels';
+import { TASK_TEMPLATES } from '../../utils/taskTemplates';
 
 interface Partner {
   userId: string;
@@ -53,10 +54,14 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task, kid
   const [reminderTime, setReminderTime] = useState('');
   const [reminderType, setReminderType] = useState<ReminderType | ''>('');
   const [nudgeInterval, setNudgeInterval] = useState<NudgeInterval | ''>('');
+  const [subtasks, setSubtasks] = useState<Subtask[]>([]);
+  const [subtaskInput, setSubtaskInput] = useState('');
+  const subtaskInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [activeTemplate, setActiveTemplate] = useState<string | null>(null);
 
   useEffect(() => {
     if (task) {
@@ -78,6 +83,7 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task, kid
       setReminderTime(task.reminder_time ?? '');
       setReminderType(task.reminder_type ?? '');
       setNudgeInterval(task.nudge_interval ?? '');
+      setSubtasks(task.subtasks ?? []);
     } else {
       setTitle('');
       setDescription('');
@@ -90,12 +96,32 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task, kid
       setReminderTime('');
       setReminderType('');
       setNudgeInterval('');
+      setSubtasks([]);
     }
+    setSubtaskInput('');
     setError('');
     setConfirmDelete(false);
+    setActiveTemplate(null);
+    setSaving(false);
   }, [task, isOpen, partner]);
 
   if (!isOpen) return null;
+
+  const addSubtask = () => {
+    const t = subtaskInput.trim();
+    if (!t) return;
+    setSubtasks((prev) => [...prev, { id: crypto.randomUUID(), title: t, completed: false }]);
+    setSubtaskInput('');
+    subtaskInputRef.current?.focus();
+  };
+
+  const toggleSubtask = (id: string) => {
+    setSubtasks((prev) => prev.map((s) => s.id === id ? { ...s, completed: !s.completed } : s));
+  };
+
+  const removeSubtask = (id: string) => {
+    setSubtasks((prev) => prev.filter((s) => s.id !== id));
+  };
 
   const toggleKidAssignee = (id: string) => {
     setKidAssignees((prev) =>
@@ -136,6 +162,7 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task, kid
         assignees,
         assigned_to_user_id,
         is_private,
+        subtasks,
         due_date: dueDate || null,
         priority,
         category,
@@ -191,6 +218,53 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task, kid
             </div>
           )}
 
+          {/* Template picker — new task only */}
+          {!task && (
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold text-ink-3 uppercase tracking-wider">Quick Start</label>
+                {activeTemplate && (
+                  <button
+                    onClick={() => { setActiveTemplate(null); setTitle(''); setCategory('other'); setPriority('medium'); setRecurrence('none'); }}
+                    className="text-xs text-ink-4 hover:text-ink-2 transition-colors"
+                  >
+                    ✕ Clear
+                  </button>
+                )}
+              </div>
+              <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                {TASK_TEMPLATES.map((tpl) => {
+                  const isActive = activeTemplate === tpl.label;
+                  return (
+                    <button
+                      key={tpl.label}
+                      onClick={() => {
+                        if (isActive) {
+                          setActiveTemplate(null);
+                          setTitle(''); setCategory('other'); setPriority('medium'); setRecurrence('none');
+                        } else {
+                          setActiveTemplate(tpl.label);
+                          setTitle(tpl.title);
+                          setCategory(tpl.category);
+                          setPriority(tpl.priority);
+                          setRecurrence(tpl.recurrence);
+                        }
+                      }}
+                      className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border-2 transition-all ${
+                        isActive
+                          ? 'bg-plum-soft border-lavender text-lavender'
+                          : 'border-line bg-bg-deep text-ink-3 hover:border-lavender hover:text-ink-2'
+                      }`}
+                    >
+                      <span>{tpl.emoji}</span>
+                      <span>{tpl.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Title */}
           <div className="mb-4">
             <label className="block text-sm font-semibold text-gray-700 mb-1">Title *</label>
@@ -213,6 +287,36 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task, kid
               rows={2}
               className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-lavender bg-gray-50 resize-none"
             />
+          </div>
+
+          {/* Subtasks */}
+          <div className="mb-4">
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Subtasks</label>
+            {subtasks.length > 0 && (
+              <div className="mb-2 space-y-1">
+                {subtasks.map((s) => (
+                  <div key={s.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-bg-deep">
+                    <button onClick={() => toggleSubtask(s.id)} className="flex-shrink-0 w-5 h-5 rounded border-2 border-line flex items-center justify-center transition-colors" style={s.completed ? { background: '#7C6FF0', borderColor: '#7C6FF0' } : {}}>
+                      {s.completed && <span className="text-white text-xs leading-none">✓</span>}
+                    </button>
+                    <span className={`flex-1 text-sm ${s.completed ? 'line-through text-ink-4' : 'text-ink'}`}>{s.title}</span>
+                    <button onClick={() => removeSubtask(s.id)} className="text-ink-4 hover:text-red text-xs px-1">✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <input
+                ref={subtaskInputRef}
+                type="text"
+                value={subtaskInput}
+                onChange={(e) => setSubtaskInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addSubtask(); } }}
+                placeholder="Add a subtask…"
+                className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-lavender bg-gray-50"
+              />
+              <button onClick={addSubtask} disabled={!subtaskInput.trim()} className="px-3 py-2 bg-lavender text-white rounded-lg text-sm font-bold disabled:opacity-40 hover:opacity-90 transition-opacity">+</button>
+            </div>
           </div>
 
           {/* Assignees */}

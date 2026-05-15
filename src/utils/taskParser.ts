@@ -1,4 +1,4 @@
-import type { TaskPriority, TaskCategory } from './taskModels';
+import type { Task, TaskPriority, TaskCategory } from './taskModels';
 import type { KidProfile } from './familyModels';
 
 export interface ParsedTask {
@@ -124,4 +124,28 @@ export function parseTaskText(text: string, kids: KidProfile[]): ParsedTask {
     .trim() || text.trim();
 
   return { title, dueDate, assignees, priority, category };
+}
+
+export function findTaskByTitle(text: string, tasks: Task[]): Task | null {
+  if (!text.trim()) return null;
+  const q = text.toLowerCase().trim();
+  const active = tasks.filter((t) => !t.completed_at);
+
+  const exact = active.find((t) => t.title.toLowerCase() === q);
+  if (exact) return exact;
+
+  const contains = active.filter(
+    (t) => t.title.toLowerCase().includes(q) || q.includes(t.title.toLowerCase()),
+  );
+  if (contains.length === 1) return contains[0];
+
+  const qWords = q.split(/\s+/);
+  let best: Task | null = null;
+  let bestScore = 0;
+  active.forEach((t) => {
+    const tWords = t.title.toLowerCase().split(/\s+/);
+    const score = qWords.filter((w) => tWords.includes(w)).length;
+    if (score > bestScore) { bestScore = score; best = t; }
+  });
+  return bestScore >= 1 ? best : null;
 }

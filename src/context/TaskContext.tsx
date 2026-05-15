@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { supabase } from '../supabaseClient';
 import { useAuthContext } from './AuthContext';
 import { useFamilyContext } from './FamilyContext';
@@ -10,7 +10,7 @@ import {
   RATING_OPTIONS,
 } from '../utils/taskModels';
 import type { RepeatDay } from '../utils/alarmModels';
-import { cancelReminderNotification, idFromUuid, scheduleReminderNotification } from '../services/notificationService';
+import { cancelReminderNotification, fireImmediateNotification, idFromUuid, scheduleReminderNotification } from '../services/notificationService';
 import { isAndroidSystemClockAvailable, openSystemClockSetAlarm } from '../services/androidClockAlarm';
 
 export type TaskFilter = 'all' | 'active' | 'done' | 'high';
@@ -92,6 +92,9 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<TaskFilter>('all');
 
+  const prevTasksRef = useRef<Task[]>([]);
+  const hasLoadedOnceRef = useRef(false);
+
   const fetchTasks = useCallback(async () => {
     if (!family?.id) {
       setTasks([]);
@@ -119,6 +122,36 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       is_overdue: isTaskOverdue(t),
     }));
 
+    // Fire notifications for assignment events (skip on initial load)
+    if (hasLoadedOnceRef.current) {
+      const prev = prevTasksRef.current;
+      const userId = (await supabase.auth.getUser()).data.user?.id;
+      if (userId) {
+        enriched.forEach((t) => {
+          // Case 1: new task assigned to me (partner assigned me a task)
+          if (
+            t.assigned_to_user_id === userId &&
+            t.assignment_status === 'pending_acceptance' &&
+            !prev.find((p) => p.id === t.id)
+          ) {
+            void fireImmediateNotification('New task assigned to you', `"${t.title}" — tap to respond`, idFromUuid(t.id));
+          }
+          // Cases 2 & 3: status change on a task I created
+          if (t.created_by === userId && t.assigned_to_user_id) {
+            const old = prev.find((p) => p.id === t.id);
+            if (old?.assignment_status === 'pending_acceptance' && t.assignment_status === 'accepted') {
+              void fireImmediateNotification('Task accepted ✓', `"${t.title}" was accepted`, idFromUuid(t.id) + 1);
+            }
+            if (old?.assignment_status === 'pending_acceptance' && t.assignment_status === 'rejected') {
+              void fireImmediateNotification('Task rejected', `"${t.title}" was rejected`, idFromUuid(t.id) + 2);
+            }
+          }
+        });
+      }
+    }
+
+    prevTasksRef.current = enriched;
+    hasLoadedOnceRef.current = true;
     setTasks(enriched);
     setLoading(false);
   }, [family?.id]);

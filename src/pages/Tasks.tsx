@@ -9,6 +9,7 @@ import TaskCard from '../components/tasks/TaskCard';
 import TaskModal from '../components/tasks/TaskModal';
 import RatingModal from '../components/tasks/RatingModal';
 import IncomingTaskCard from '../components/tasks/IncomingTaskCard';
+import CalendarView from '../components/tasks/CalendarView';
 import { useConfetti } from '../hooks/useConfetti';
 
 const FILTER_TABS: { key: TaskFilter; label: string }[] = [
@@ -39,12 +40,13 @@ export default function Tasks() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [ratingTask, setRatingTask] = useState<Task | null>(null);
   const [assigneeFilter, setAssigneeFilter] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
 
   // Derive partner from family members
   const partner = useMemo(() => {
     const partnerMember = familyMembers.find((m) => m.user_id !== user?.id);
     if (!partnerMember) return null;
-    return { userId: partnerMember.user_id, name: 'Partner' };
+    return { userId: partnerMember.user_id, name: partnerMember.display_name ?? 'Partner' };
   }, [familyMembers, user?.id]);
 
   // Tasks where current user is the assignee and status is pending
@@ -157,13 +159,27 @@ export default function Tasks() {
           <h1 className="text-2xl font-extrabold text-ink">Tasks</h1>
           <p className="text-sm text-ink-3 mt-0.5">{activeTasks.length} active</p>
         </div>
-        <button
-          onClick={handleAdd}
-          className="w-11 h-11 bg-ink text-bg rounded-2xl text-xl font-bold flex items-center justify-center hover:opacity-80 transition-all active:scale-95"
-          aria-label="Add task"
-        >
-          +
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setViewMode(viewMode === 'list' ? 'calendar' : 'list')}
+            className={`w-9 h-9 rounded-xl flex items-center justify-center text-base transition-all border-2 ${
+              viewMode === 'calendar'
+                ? 'bg-lavender border-lavender text-white'
+                : 'border-line text-ink-3 bg-white'
+            }`}
+            aria-label="Toggle calendar view"
+            title="Calendar view"
+          >
+            📅
+          </button>
+          <button
+            onClick={handleAdd}
+            className="w-11 h-11 bg-ink text-bg rounded-2xl text-xl font-bold flex items-center justify-center hover:opacity-80 transition-all active:scale-95"
+            aria-label="Add task"
+          >
+            +
+          </button>
+        </div>
       </div>
 
       {/* Incoming tasks — response needed */}
@@ -251,7 +267,17 @@ export default function Tasks() {
         </div>
       )}
 
-      {loading ? (
+      {viewMode === 'calendar' ? (
+        <CalendarView
+          tasks={tasks}
+          kids={kidProfiles}
+          currentUserId={user?.id}
+          onComplete={handleCompletePress}
+          onEdit={handleEdit}
+          onDelete={(id) => void deleteTask(id)}
+          onReassign={(t) => { setEditingTask(t); setModalOpen(true); }}
+        />
+      ) : loading ? (
         <div className="flex justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-lavender" />
         </div>

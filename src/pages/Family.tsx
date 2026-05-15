@@ -21,7 +21,7 @@ export default function Family() {
   const {
     family, familyMembers, kidProfiles, loading, error, isOwner,
     createFamily, joinFamily, generateInviteCode,
-    addKidProfile, updateKidProfile, removeKidProfile,
+    addKidProfile, updateKidProfile, removeKidProfile, updateFamilyMember,
   } = useFamilyContext();
   const { user, signOut } = useAuthContext();
 
@@ -46,6 +46,9 @@ export default function Family() {
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteSending, setInviteSending] = useState(false);
+
+  const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
+  const [editMemberName, setEditMemberName] = useState('');
 
   useEffect(() => {
     if (!user?.id) return;
@@ -111,6 +114,12 @@ export default function Family() {
     showToast(`Invite opened for ${inviteEmail.trim()}`);
     setInviteEmail('');
     setInviteSending(false);
+  };
+
+  const handleSaveMemberName = async (memberId: string) => {
+    const result = await updateFamilyMember(memberId, { display_name: editMemberName.trim() || null });
+    if (result.error) showToast('Could not save name.', 'error');
+    else { showToast('Name saved!'); setEditingMemberId(null); }
   };
 
   const handleAddKid = async () => {
@@ -309,21 +318,49 @@ export default function Family() {
               <div className="bg-white rounded-2xl border border-line-soft shadow-sm p-4">
                 <h2 className="text-xs font-bold text-ink-3 uppercase tracking-wider mb-3">Members</h2>
                 <div className="space-y-2">
-                  {familyMembers.map((member) => (
-                    <div key={member.id} className="flex items-center gap-3 py-2 px-3 bg-bg-deep rounded-xl">
-                      <div className="w-8 h-8 bg-plum-soft rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-base">{member.role === 'owner' ? '👑' : '👤'}</span>
+                  {familyMembers.map((member) => {
+                    const isMe = member.user_id === user?.id;
+                    const canEdit = isMe || (isOwner && member.role === 'partner');
+                    const label = member.display_name ?? (member.role === 'owner' ? 'Owner' : 'Partner');
+                    return (
+                      <div key={member.id} className="flex flex-col gap-1 py-2 px-3 bg-bg-deep rounded-xl">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-plum-soft rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-base">{member.role === 'owner' ? '👑' : '👤'}</span>
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-ink-2">{label}</p>
+                            <p className="text-xs text-ink-4">
+                              {member.role === 'owner' ? 'Owner' : 'Partner'} · Joined {new Date(member.joined_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                            </p>
+                          </div>
+                          {canEdit && editingMemberId !== member.id && (
+                            <button
+                              onClick={() => { setEditingMemberId(member.id); setEditMemberName(member.display_name ?? ''); }}
+                              className="text-xs text-lavender font-semibold px-2 py-1 rounded-lg hover:bg-plum-soft transition-colors"
+                            >
+                              Rename
+                            </button>
+                          )}
+                        </div>
+                        {editingMemberId === member.id && (
+                          <div className="flex gap-2 mt-1">
+                            <input
+                              type="text"
+                              value={editMemberName}
+                              onChange={(e) => setEditMemberName(e.target.value)}
+                              onKeyDown={(e) => { if (e.key === 'Enter') void handleSaveMemberName(member.id); if (e.key === 'Escape') setEditingMemberId(null); }}
+                              placeholder={member.role === 'owner' ? 'Your name' : 'Partner name'}
+                              className="flex-1 px-3 py-2 border border-line rounded-xl text-sm text-ink placeholder-ink-4 focus:outline-none focus:ring-2 focus:ring-lavender bg-white"
+                              autoFocus
+                            />
+                            <button onClick={() => void handleSaveMemberName(member.id)} className="px-3 py-2 bg-lavender text-white rounded-xl text-sm font-bold hover:opacity-90">Save</button>
+                            <button onClick={() => setEditingMemberId(null)} className="px-3 py-2 border border-line rounded-xl text-sm text-ink-3 hover:bg-bg-deep">✕</button>
+                          </div>
+                        )}
                       </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold text-ink-2">
-                          {member.role === 'owner' ? 'Owner' : 'Partner'}
-                        </p>
-                        <p className="text-xs text-ink-4">
-                          Joined {new Date(member.joined_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 

@@ -157,6 +157,23 @@ export default function TaskCard({ task, kids, currentUserId, onComplete, onEdit
             </div>
           )}
 
+          {/* Subtask progress */}
+          {task.subtasks && task.subtasks.length > 0 && (
+            <div className="mt-2">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs text-ink-3">
+                  {task.subtasks.filter((s) => s.completed).length}/{task.subtasks.length} subtasks
+                </span>
+              </div>
+              <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-lavender rounded-full transition-all"
+                  style={{ width: `${(task.subtasks.filter((s) => s.completed).length / task.subtasks.length) * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Meta row */}
           {!isRejected && (
             <div className="flex items-center gap-2 mt-2 flex-wrap">
