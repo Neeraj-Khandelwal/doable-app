@@ -212,6 +212,10 @@ export default function Alarms() {
         void cancelReminderNotification(idFromUuid(item.id), item.nudgeInterval ?? 0);
         return;
       }
+      if (isAndroidClock && item.type === 'task' && item.reminderType === 'alarm') {
+        void cancelReminderNotification(idFromUuid(item.id), item.nudgeInterval ?? 0);
+        return;
+      }
       void scheduleReminderNotification(
         idFromUuid(item.id),
         item.reminderTime,
@@ -220,7 +224,7 @@ export default function Alarms() {
         item.nudgeInterval ?? 0,
       );
     });
-  }, [isNative, permission, allReminders]);
+  }, [isNative, isAndroidClock, permission, allReminders]);
 
   // ── Notification polling (tasks + habits) — web only ────────────────────────
   useEffect(() => {
