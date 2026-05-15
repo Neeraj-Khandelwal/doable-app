@@ -9,6 +9,9 @@ import {
   type RatingType,
   RATING_OPTIONS,
 } from '../utils/taskModels';
+import type { RepeatDay } from '../utils/alarmModels';
+import { cancelReminderNotification, idFromUuid, scheduleReminderNotification } from '../services/notificationService';
+import { isAndroidSystemClockAvailable, openSystemClockSetAlarm } from '../services/androidClockAlarm';
 
 export type TaskFilter = 'all' | 'active' | 'done' | 'high';
 
@@ -28,6 +31,50 @@ type TaskContextValue = {
 };
 
 const TaskContext = createContext<TaskContextValue | undefined>(undefined);
+
+/**
+ * Converts a task due date and recurrence into Android Clock repeat days.
+ * Call with a saved task; returns all days for daily, the due-date weekday for weekly, and empty for one-time/monthly.
+ */
+function getTaskAlarmRepeatDays(task: Pick<Task, 'due_date' | 'recurrence'>): RepeatDay[] {
+  if (task.recurrence === 'daily') return [0, 1, 2, 3, 4, 5, 6];
+  if (task.recurrence !== 'weekly' || !task.due_date) return [];
+
+  const [year, month, day] = task.due_date.split('-').map(Number);
+  return [new Date(year, month - 1, day).getDay() as RepeatDay];
+}
+
+/**
+ * Sends task reminder alarms to Android Clock and falls back to a local notification when native fails.
+ * Call after creating/updating a task with `reminder_type: 'alarm'`; returns after Clock opens or fallback schedules.
+ */
+async function scheduleTaskAlarmDelivery(task: Task, previousNudgeInterval = 0): Promise<void> {
+  if (!task.reminder_time || task.reminder_type !== 'alarm' || task.completed_at) return;
+
+  const notifId = idFromUuid(task.id);
+  const title = `📌 ${task.title}`;
+
+  if (isAndroidSystemClockAvailable()) {
+    try {
+      const result = await openSystemClockSetAlarm(
+        task.reminder_time,
+        task.title,
+        getTaskAlarmRepeatDays(task),
+      );
+
+      if (result.success) {
+        await cancelReminderNotification(notifId, previousNudgeInterval);
+        return;
+      }
+
+      console.warn('Android Clock task alarm creation failed; falling back to local notification:', result.message);
+    } catch (err) {
+      console.warn('Android Clock task alarm creation threw; falling back to local notification:', err);
+    }
+  }
+
+  await scheduleReminderNotification(notifId, task.reminder_time, title, "Don't forget this task!", 0);
+}
 
 export const useTaskContext = () => {
   const ctx = useContext(TaskContext);
@@ -142,6 +189,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
     const task = { ...created, is_overdue: isTaskOverdue(created) } as Task;
     setTasks((prev) => [task, ...prev]);
+    await scheduleTaskAlarmDelivery(task);
     return { data: task };
   };
 
@@ -156,13 +204,22 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     if (updateError) return { error: updateError.message };
 
     const task = { ...updated, is_overdue: isTaskOverdue(updated) } as Task;
+    const previousTask = tasks.find((t) => t.id === id);
     setTasks((prev) => prev.map((t) => (t.id === id ? task : t)));
+    if (previousTask?.reminder_time && previousTask.reminder_type !== task.reminder_type) {
+      await cancelReminderNotification(idFromUuid(id), previousTask.nudge_interval ?? 0);
+    }
+    await scheduleTaskAlarmDelivery(task, previousTask?.nudge_interval ?? 0);
     return { data: task };
   };
 
   const deleteTask = async (id: string) => {
     const { error: deleteError } = await supabase.from('tasks').delete().eq('id', id);
     if (deleteError) return { error: deleteError.message };
+    const task = tasks.find((t) => t.id === id);
+    if (task?.reminder_time) {
+      await cancelReminderNotification(idFromUuid(id), task.nudge_interval ?? 0);
+    }
     setTasks((prev) => prev.filter((t) => t.id !== id));
     return {};
   };

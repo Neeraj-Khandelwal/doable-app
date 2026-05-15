@@ -15,6 +15,7 @@ import {
   registerForPushNotifications,
   idFromUuid,
 } from '../services/notificationService';
+import { isAndroidSystemClockAvailable } from '../services/androidClockAlarm';
 
 type ReminderItem = {
   id: string;
@@ -152,6 +153,7 @@ export default function Alarms() {
   const { alarms, createAlarm, updateAlarm, deleteAlarm, toggleAlarm } = useAlarmContext();
   const { user } = useAuthContext();
   const { permission, requestPermission, fire, isNative } = useNotifications();
+  const isAndroidClock = isAndroidSystemClockAvailable();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAlarm, setEditingAlarm] = useState<Alarm | null>(null);
@@ -210,6 +212,10 @@ export default function Alarms() {
         void cancelReminderNotification(idFromUuid(item.id), item.nudgeInterval ?? 0);
         return;
       }
+      if (isAndroidClock && item.type === 'task' && item.reminderType === 'alarm') {
+        void cancelReminderNotification(idFromUuid(item.id), item.nudgeInterval ?? 0);
+        return;
+      }
       void scheduleReminderNotification(
         idFromUuid(item.id),
         item.reminderTime,
@@ -218,7 +224,7 @@ export default function Alarms() {
         item.nudgeInterval ?? 0,
       );
     });
-  }, [isNative, permission, allReminders]);
+  }, [isNative, isAndroidClock, permission, allReminders]);
 
   // ── Notification polling (tasks + habits) — web only ────────────────────────
   useEffect(() => {
@@ -350,7 +356,9 @@ export default function Alarms() {
         <div className="bg-mint/10 border border-mint/30 rounded-xl p-3 flex items-center gap-2">
           <span className="text-lg">✅</span>
           <p className="text-sm font-medium text-gray-700">
-            {isNative
+            {isAndroidClock
+              ? 'Android Clock integration enabled — standalone alarms open in Clock to confirm.'
+              : isNative
               ? 'Notifications enabled — alarms fire even when the app is closed.'
               : 'Notifications enabled — alarms fire while the app is open.'}
           </p>
@@ -387,6 +395,12 @@ export default function Alarms() {
               />
             ))}
           </div>
+        )}
+        {isAndroidClock && (
+          <p className="text-xs text-gray-400 mt-3">
+            Saving or editing an alarm opens your phone Clock app with the time and repeat days prefilled.
+            Removing it in Doable will not remove an alarm you already confirmed in Clock.
+          </p>
         )}
       </section>
 
