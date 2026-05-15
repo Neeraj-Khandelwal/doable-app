@@ -1,73 +1,140 @@
-# React + TypeScript + Vite
+# Doable
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A family productivity app that helps households manage tasks, build habits, track rewards, and stay organized together. Built as a cross-platform mobile application with Android support via Capacitor.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Task Management** – Create, assign, and track tasks across family members with due dates and priorities
+- **Habit Tracking** – Build and maintain daily/weekly habits with streak tracking and visual progress
+- **Rewards & Points System** – Gamified motivation system where completing tasks and habits earns points redeemable for rewards
+- **Family Management** – Create or join a family group, invite members, and collaborate on shared responsibilities
+- **Intermittent Fasting Tracker** – Track fasting windows with timer and progress visualization
+- **Grocery Lists** – Shared grocery lists that sync in real-time across family members
+- **Alarms & Reminders** – Push notifications and local alarms to keep everyone on track
+- **Voice Capture** – Voice input for quickly adding tasks and notes
+- **Authentication** – Secure signup/login with password reset functionality via Supabase Auth
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 19, TypeScript, Tailwind CSS 4 |
+| Routing | React Router v7 |
+| Backend | Supabase (Auth, Database, Edge Functions, Realtime) |
+| Mobile | Capacitor 8 (Android) |
+| Build | Vite 8, EAS Build |
+| Charts | Recharts |
+| Notifications | Firebase Cloud Messaging (FCM), Capacitor Local Notifications |
 
-## Expanding the ESLint configuration
+## Prerequisites
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **Node.js** v18+ and npm
+- **Supabase** project (for backend services)
+- **Firebase** project (for push notifications)
+- **Android Studio** (for Android builds)
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Getting Started
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### 1. Clone the repository
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+git clone https://github.com/Neeraj-Khandelwal/doable-app.git
+cd doable-app
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 2. Install dependencies
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
 ```
+
+### 3. Configure environment variables
+
+Copy the example environment file and fill in your credentials:
+
+```bash
+cp .env.example .env
+```
+
+Required variables:
+
+| Variable | Description |
+|----------|-------------|
+| `VITE_SUPABASE_URL` | Your Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Your Supabase anonymous/public key |
+| `VITE_FIREBASE_API_KEY` | Your Firebase API key (for push notifications) |
+
+### 4. Run the development server
+
+```bash
+npm run dev
+```
+
+The app will be available at `http://localhost:5173`.
+
+## Available Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start the Vite development server |
+| `npm run build` | Type-check and build for production |
+| `npm run preview` | Preview the production build locally |
+| `npm run lint` | Run ESLint across the project |
+
+## Android Build
+
+This project uses Capacitor to wrap the web app for Android.
+
+```bash
+# Build the web app
+npm run build
+
+# Sync web assets to the Android project
+npx cap sync android
+
+# Open in Android Studio
+npx cap open android
+```
+
+For production builds, this project is configured with [EAS Build](https://docs.expo.dev/build/introduction/) (see `eas.json`).
+
+## Project Structure
+
+```
+doable-app/
+├── src/
+│   ├── components/     # Reusable UI components (alarms, fasting, grocery, habits, etc.)
+│   ├── context/        # React context providers (Auth, Family, Task, Habit, Rewards, etc.)
+│   ├── hooks/          # Custom React hooks
+│   ├── pages/          # Page-level components (Home, Tasks, Habits, Family, etc.)
+│   ├── services/       # API and service layer
+│   ├── styles/         # Global styles
+│   ├── utils/          # Utility functions
+│   ├── App.tsx         # Root component with routing and providers
+│   └── main.tsx        # Application entry point
+├── supabase/
+│   ├── functions/      # Supabase Edge Functions (send-invite, send-push)
+│   └── migrations/     # Database migration files
+├── android/            # Capacitor Android project
+├── public/             # Static assets
+└── index.html          # HTML entry point
+```
+
+## Supabase Setup
+
+The app relies on Supabase for:
+
+- **Authentication** – Email/password auth with magic links
+- **Database** – PostgreSQL for all app data (tasks, habits, families, rewards, etc.)
+- **Edge Functions** – Serverless functions for sending invites and push notifications
+- **Realtime** – Live sync of shared data across family members
+
+Database migrations are located in `supabase/migrations/`. Apply them using the [Supabase CLI](https://supabase.com/docs/guides/cli):
+
+```bash
+supabase db push
+```
+
+## License
+
+This project is private.
