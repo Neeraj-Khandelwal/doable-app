@@ -12,7 +12,7 @@ Doable is a React + TypeScript application built with Vite, styled with Tailwind
 - **npm** >= 9.x (ships with Node.js)
 - **Git**
 - A **Supabase** project (free tier works for development)
-- *(Optional for Android)* Android Studio with SDK installed, Java 17+
+- *(Optional for Android)* Android Studio with SDK installed, Java 21+
 
 ---
 
@@ -239,5 +239,5 @@ doable-app/
 |-------|----------|
 | `VITE_SUPABASE_URL` not found | Ensure `.env` file exists in the project root with correct values |
 | Supabase connection errors | Verify your Supabase project is active and credentials are correct |
-| Android build fails | Ensure Android Studio SDK and Java 17+ are installed |
+| Android build fails | Ensure Android Studio SDK and Java 21+ are installed |
 | `cap sync` errors | Run `npm run build` first to generate the `dist/` folder |
