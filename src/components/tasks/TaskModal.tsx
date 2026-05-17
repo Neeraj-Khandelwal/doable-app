@@ -40,7 +40,7 @@ function nextWeekStr() {
   return d.toISOString().split('T')[0];
 }
 
-type AdultAssignee = 'me' | 'partner' | 'family';
+type AdultAssignee = 'me' | 'partner' | 'family' | 'none';
 
 export default function TaskModal({ isOpen, onClose, onSave, onDelete, task, kids, partner }: TaskModalProps) {
   const [title, setTitle] = useState('');
@@ -70,7 +70,9 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task, kid
       // Derive adult assignee from existing task fields
       if (task.assigned_to_user_id && partner && task.assigned_to_user_id === partner.userId) {
         setAdultAssignee('partner');
-      } else if (!task.is_private && task.assignees.includes('me')) {
+      } else if (!task.assignees.includes('me')) {
+        setAdultAssignee('none');
+      } else if (!task.is_private) {
         setAdultAssignee('family');
       } else {
         setAdultAssignee('me');
@@ -139,16 +141,16 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task, kid
 
     if (adultAssignee === 'me') {
       assignees.push('me');
-      is_private = true; // personal = private
+      is_private = true;
     } else if (adultAssignee === 'partner' && partner) {
       assignees.push('me');
       assigned_to_user_id = partner.userId;
-      is_private = true; // only visible to creator + assignee
-    } else {
-      // family
+      is_private = true;
+    } else if (adultAssignee === 'family') {
       assignees.push('me');
       is_private = false;
     }
+    // 'none' = kids only, don't push 'me'
     kidAssignees.forEach((k) => assignees.push(k));
 
     if (assignees.length === 0) { setError('Select at least one assignee.'); return; }
@@ -332,7 +334,7 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task, kid
               ] as { key: AdultAssignee; label: string }[]).map((opt) => (
                 <button
                   key={opt.key}
-                  onClick={() => setAdultAssignee(opt.key)}
+                  onClick={() => setAdultAssignee((prev) => prev === opt.key ? 'none' : opt.key)}
                   className={`px-3 py-1.5 rounded-full text-sm font-medium border-2 transition-colors ${
                     adultAssignee === opt.key
                       ? 'bg-lavender text-white border-lavender'

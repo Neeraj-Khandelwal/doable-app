@@ -61,7 +61,7 @@ const AppRoutes = () => {
       <Route path="/family/settings" element={<ProtectedRoute><FamilySettings /></ProtectedRoute>} />
       <Route path="/family-setup" element={<ProtectedRoute><FamilySetup /></ProtectedRoute>} />
       <Route path="/voice-capture" element={<ProtectedRoute><VoiceCapture /></ProtectedRoute>} />
-      <Route path="/test-voice" element={<ProtectedRoute><Layout><TestVoice /></Layout></ProtectedRoute>} />
+      <Route path="/test-voice" element={<ProtectedRoute><TestVoice /></ProtectedRoute>} />
       <Route path="/" element={<Navigate to="/home" />} />
     </Routes>
   );

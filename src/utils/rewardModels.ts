@@ -22,7 +22,7 @@ export interface RewardRedemption {
   created_at: string;
 }
 
-export type PointEventType = 'adhoc' | 'streak_bonus';
+export type PointEventType = 'adhoc' | 'streak_bonus' | 'habit_completion' | 'task_rating';
 
 export interface KidPointEvent {
   id: string;
@@ -32,6 +32,7 @@ export interface KidPointEvent {
   reason: string;
   type: PointEventType;
   habit_id: string | null;
+  photo_url: string | null;
   created_by: string;
   event_date: string;    // YYYY-MM-DD
   created_at: string;

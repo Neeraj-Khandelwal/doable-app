@@ -7,8 +7,9 @@ import { useFamilyContext } from '../context/FamilyContext';
 import { useGroceryContext } from '../context/GroceryContext';
 import { supabase } from '../supabaseClient';
 import FastingCard from '../components/fasting/FastingCard';
-import { CATEGORY_ICONS } from '../utils/taskModels';
+import { CATEGORY_ICONS, isKidTask } from '../utils/taskModels';
 import type { Task } from '../utils/taskModels';
+import RatingModal from '../components/tasks/RatingModal';
 import { isScheduledToday } from '../utils/habitModels';
 
 const KID_COLOR_MAP: Record<string, string> = {
@@ -22,7 +23,7 @@ const KID_COLOR_MAP: Record<string, string> = {
 
 export default function Home() {
   const { user } = useAuthContext();
-  const { tasks, createTask, markComplete } = useTaskContext();
+  const { tasks, createTask, markComplete, rateAndComplete } = useTaskContext();
   const { habits } = useHabitContext();
   const { kidProfiles, familyMembers } = useFamilyContext();
   const { items: groceryItems, addItem: addGroceryItem, togglePurchased } = useGroceryContext();
@@ -46,7 +47,23 @@ export default function Home() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [ratingTask, setRatingTask] = useState<Task | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleCompletePress = (task: Task) => {
+    if (isKidTask(task)) {
+      setRatingTask(task);
+    } else {
+      void markComplete(task.id);
+    }
+  };
+
+  const handleRatingConfirm = async (ratings: { kid_id: string; rating_type: string }[]) => {
+    if (ratingTask) {
+      await rateAndComplete(ratingTask.id, ratings as any);
+      setRatingTask(null);
+    }
+  };
 
   // Grocery quick-add
   const [groceryInput, setGroceryInput] = useState('');
@@ -325,7 +342,7 @@ export default function Home() {
                 className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-bg transition-colors"
               >
                 <button
-                  onClick={() => void markComplete(task.id)}
+                  onClick={() => handleCompletePress(task)}
                   className="w-6 h-6 rounded-full border-2 border-line flex-shrink-0 hover:border-mint hover:bg-mint/10 transition-colors"
                   aria-label="Mark complete"
                 />
@@ -445,6 +462,14 @@ export default function Home() {
       >
         +
       </button>
+
+      <RatingModal
+        isOpen={!!ratingTask}
+        onClose={() => setRatingTask(null)}
+        onConfirm={handleRatingConfirm}
+        task={ratingTask}
+        kids={kidProfiles}
+      />
     </div>
   );
 }

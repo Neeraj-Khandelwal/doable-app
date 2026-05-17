@@ -15,7 +15,7 @@ type RewardsContextValue = {
   updateReward: (id: string, updates: Partial<Reward>) => Promise<{ data?: Reward; error?: string }>;
   deleteReward: (id: string) => Promise<{ error?: string }>;
   redeemReward: (rewardId: string, kidId: string, currentBalance: number) => Promise<{ error?: string }>;
-  addPointEvent: (kidId: string, points: number, reason: string) => Promise<{ error?: string }>;
+  addPointEvent: (kidId: string, points: number, reason: string, photoUrl?: string | null) => Promise<{ error?: string }>;
   refreshRewards: () => Promise<void>;
 };
 
@@ -140,7 +140,7 @@ export const RewardsProvider = ({ children }: { children: ReactNode }) => {
     return {};
   };
 
-  const addPointEvent = async (kidId: string, points: number, reason: string) => {
+  const addPointEvent = async (kidId: string, points: number, reason: string, photoUrl?: string | null) => {
     if (!family?.id || !user?.id) return { error: 'Not authenticated' };
     if (points === 0) return { error: 'Points cannot be zero' };
     if (!reason.trim()) return { error: 'Reason is required' };
@@ -154,6 +154,7 @@ export const RewardsProvider = ({ children }: { children: ReactNode }) => {
         reason: reason.trim(),
         type: 'adhoc',
         habit_id: null,
+        photo_url: photoUrl ?? null,
         created_by: user.id,
         event_date: todayStr(),
       }])

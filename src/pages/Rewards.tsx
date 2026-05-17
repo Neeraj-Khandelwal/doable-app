@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useAuthContext } from '../context/AuthContext';
 import { useRewardsContext } from '../context/RewardsContext';
 import { useTaskContext } from '../context/TaskContext';
 import { useFamilyContext } from '../context/FamilyContext';
@@ -59,6 +60,7 @@ type PointEvent = {
   ratingType: string;
   points: number;
   date: string;
+  photoUrl?: string | null;
 };
 
 const KID_COLOR_MAP: Record<string, string> = {
@@ -71,6 +73,7 @@ const KID_COLOR_MAP: Record<string, string> = {
 };
 
 export default function Rewards() {
+  const { user } = useAuthContext();
   const { rewards, redemptions, kidPointEvents, loading, error, createReward, updateReward, deleteReward, redeemReward, addPointEvent } =
     useRewardsContext();
   const { tasks } = useTaskContext();
@@ -148,6 +151,7 @@ export default function Rewards() {
         ratingType: e.type === 'streak_bonus' ? 'streak_bonus' : 'adhoc',
         points: e.points,
         date: e.event_date,
+        photoUrl: e.photo_url,
       });
     });
     return events.sort((a, b) => b.date.localeCompare(a.date));
@@ -368,34 +372,44 @@ export default function Rewards() {
                   const iconEmoji = isStreakBonus ? '🔥' : isAdhoc ? (evt.points >= 0 ? '⭐' : '📉') : (ratingOpt?.emoji ?? '⭐');
                   const iconBg = isStreakBonus ? '#E8A80025' : `${kidColor}25`;
                   return (
-                    <div key={evt.key} className="flex items-center gap-3 p-3 bg-white rounded-xl border border-line-soft shadow-sm">
-                      <div
-                        className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-                        style={{ backgroundColor: iconBg }}
-                      >
-                        {iconEmoji}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-ink truncate">{evt.taskTitle}</p>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          {kid && (
-                            <span
-                              className="text-xs font-medium px-1.5 py-0.5 rounded text-white"
-                              style={{ backgroundColor: kidColor }}
-                            >
-                              {kid.name}
-                            </span>
-                          )}
-                          <span className="text-xs text-ink-4">
-                            {isStreakBonus ? '🔥 7-day streak bonus' : isAdhoc ? '⭐ Adhoc award' : evt.ratingType}
-                          </span>
-                          <span className="text-xs text-ink-4">·</span>
-                          <span className="text-xs text-ink-4">{date}</span>
+                    <div key={evt.key} className="bg-white rounded-xl border border-line-soft shadow-sm overflow-hidden">
+                      {/* Photo (if present) */}
+                      {evt.photoUrl && (
+                        <img
+                          src={evt.photoUrl}
+                          alt="Moment"
+                          className="w-full h-40 object-cover"
+                        />
+                      )}
+                      <div className="flex items-center gap-3 p-3">
+                        <div
+                          className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
+                          style={{ backgroundColor: iconBg }}
+                        >
+                          {iconEmoji}
                         </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-ink truncate">{evt.taskTitle}</p>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            {kid && (
+                              <span
+                                className="text-xs font-medium px-1.5 py-0.5 rounded text-white"
+                                style={{ backgroundColor: kidColor }}
+                              >
+                                {kid.name}
+                              </span>
+                            )}
+                            <span className="text-xs text-ink-4">
+                              {isStreakBonus ? '🔥 7-day streak bonus' : isAdhoc ? '⭐ Adhoc award' : evt.ratingType}
+                            </span>
+                            <span className="text-xs text-ink-4">·</span>
+                            <span className="text-xs text-ink-4">{date}</span>
+                          </div>
+                        </div>
+                        <span className={`text-sm font-extrabold flex-shrink-0 ${evt.points >= 0 ? 'text-green' : 'text-rose'}`}>
+                          {evt.points >= 0 ? '+' : ''}{evt.points}
+                        </span>
                       </div>
-                      <span className={`text-sm font-extrabold flex-shrink-0 ${evt.points >= 0 ? 'text-green' : 'text-rose'}`}>
-                        {evt.points >= 0 ? '+' : ''}{evt.points}
-                      </span>
                     </div>
                   );
                 })
@@ -435,6 +449,7 @@ export default function Rewards() {
         onClose={() => setGivePointsOpen(false)}
         kids={kidProfiles}
         defaultKidId={givePointsKidId}
+        userId={user?.id ?? ''}
         onSave={addPointEvent}
       />
     </div>

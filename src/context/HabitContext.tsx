@@ -103,13 +103,25 @@ export const HabitProvider = ({ children }: { children: ReactNode }) => {
     const newCompletion = data as HabitCompletion;
     setCompletions((prev) => [newCompletion, ...prev]);
 
-    // Check for weekly streak bonus — kids only (not 'me')
+    // Award points — kids only (not 'me')
     if (assignee !== 'me') {
       const habit = habits.find((h) => h.id === habitId);
       if (habit) {
+        // 1 point per completion
+        await supabase.from('kid_point_events').insert([{
+          kid_id: assignee,
+          family_id: family.id,
+          points: 1,
+          reason: `Habit: ${habit.title}`,
+          type: 'habit_completion',
+          habit_id: habitId,
+          created_by: user?.id ?? 'system',
+          event_date: today,
+        }]);
+
+        // 5-point bonus every 7-day streak
         const updatedCompletions = [newCompletion, ...completions];
         const newStreak = computeStreak(updatedCompletions, assignee, habit);
-
         if (newStreak > 0 && newStreak % 7 === 0) {
           const { error: bonusErr } = await supabase
             .from('kid_point_events')
