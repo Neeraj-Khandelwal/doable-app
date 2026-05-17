@@ -1,13 +1,28 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useGroceryContext } from '../context/GroceryContext';
 import { useFamilyContext } from '../context/FamilyContext';
+import { useAuthContext } from '../context/AuthContext';
 import GroceryItemCard from '../components/grocery/GroceryItemCard';
 import { MAX_GROCERY_ITEMS } from '../utils/groceryModels';
 
 export default function Grocery() {
   const { items, loading, syncing, error, addItem, togglePurchased, renameItem, deleteItem, clearPurchased } =
     useGroceryContext();
-  const { family } = useFamilyContext();
+  const { family, familyMembers } = useFamilyContext();
+  const { user } = useAuthContext();
+
+  const nameFor = useMemo(() => {
+    const first = (s: string) => s.split(' ')[0];
+    const map: Record<string, string> = {};
+    familyMembers.forEach((m) => {
+      map[m.user_id] = first(m.display_name ?? (m.role === 'owner' ? 'Owner' : 'Partner'));
+    });
+    return (userId: string | null): string | undefined => {
+      if (!userId) return undefined;
+      if (userId === user?.id) return 'You';
+      return map[userId];
+    };
+  }, [familyMembers, user?.id]);
 
   const [newName, setNewName] = useState('');
   const [addError, setAddError] = useState('');
@@ -118,6 +133,7 @@ export default function Grocery() {
                     <GroceryItemCard
                       key={item.id}
                       item={item}
+                      addedByName={nameFor(item.added_by)}
                       onToggle={(id) => void togglePurchased(id)}
                       onRename={(id, name) => void renameItem(id, name)}
                       onDelete={(id) => void deleteItem(id)}

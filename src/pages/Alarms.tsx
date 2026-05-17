@@ -3,12 +3,14 @@ import { useTaskContext } from '../context/TaskContext';
 import { useHabitContext } from '../context/HabitContext';
 import { useAlarmContext } from '../context/AlarmContext';
 import { useAuthContext } from '../context/AuthContext';
+import { useFamilyContext } from '../context/FamilyContext';
 import { CATEGORY_ICONS } from '../utils/taskModels';
 import { isScheduledToday, todayStr } from '../utils/habitModels';
 import { formatRepeatDays, alarmFiresToday } from '../utils/alarmModels';
 import type { Alarm } from '../utils/alarmModels';
 import { useNotifications, alarmFiredKey, formatTime } from '../hooks/useNotifications';
 import AlarmModal from '../components/alarms/AlarmModal';
+import IncomingTaskCard from '../components/tasks/IncomingTaskCard';
 import {
   scheduleReminderNotification,
   cancelReminderNotification,
@@ -148,10 +150,11 @@ function StandaloneAlarmRow({
 }
 
 export default function Alarms() {
-  const { tasks } = useTaskContext();
+  const { tasks, acceptTask, rejectTask } = useTaskContext();
   const { habits, getTodayCount } = useHabitContext();
   const { alarms, createAlarm, updateAlarm, deleteAlarm, toggleAlarm } = useAlarmContext();
   const { user } = useAuthContext();
+  const { familyMembers } = useFamilyContext();
   const { permission, requestPermission, fire, isNative } = useNotifications();
   const isAndroidClock = isAndroidSystemClockAvailable();
 
@@ -198,6 +201,17 @@ export default function Alarms() {
       a.reminderTime.localeCompare(b.reminderTime)
     );
   }, [tasks, habits, getTodayCount]);
+
+  const incomingTasks = useMemo(
+    () => tasks.filter((t) => t.assigned_to_user_id === user?.id && t.assignment_status === 'pending_acceptance'),
+    [tasks, user?.id]
+  );
+
+  const creatorNameFor = useMemo(() => {
+    const map: Record<string, string> = {};
+    familyMembers.forEach((m) => { map[m.user_id] = m.display_name?.split(' ')[0] ?? (m.role === 'owner' ? 'Owner' : 'Partner'); });
+    return (userId: string) => map[userId] ?? 'Someone';
+  }, [familyMembers]);
 
   const nudgeReminders = allReminders.filter((r) => r.reminderType === 'nudge');
   const regularReminders = allReminders.filter((r) => r.reminderType !== 'nudge');
@@ -311,7 +325,7 @@ export default function Alarms() {
     if (result.error) throw new Error(result.error);
   };
 
-  const totalCount = alarms.length + allReminders.length;
+  const totalCount = alarms.length + allReminders.length + incomingTasks.length;
 
   return (
     <div className="space-y-5 pb-4">
@@ -363,6 +377,26 @@ export default function Alarms() {
               : 'Notifications enabled — alarms fire while the app is open.'}
           </p>
         </div>
+      )}
+
+      {/* ── Pending Task Assignments ─────────────────────────────────────────── */}
+      {incomingTasks.length > 0 && (
+        <section>
+          <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-3">
+            📨 Response Needed ({incomingTasks.length})
+          </h2>
+          <div className="space-y-2">
+            {incomingTasks.map((task) => (
+              <IncomingTaskCard
+                key={task.id}
+                task={task}
+                creatorName={creatorNameFor(task.created_by)}
+                onAccept={async (id) => { await acceptTask(id); }}
+                onReject={async (id, reason) => { await rejectTask(id, reason); }}
+              />
+            ))}
+          </div>
+        </section>
       )}
 
       {/* ── Standalone Alarms ─────────────────────────────────────────────────── */}

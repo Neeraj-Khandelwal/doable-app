@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from 'react';
 import { supabase } from '../supabaseClient';
+import { useAuthContext } from './AuthContext';
 import { useFamilyContext } from './FamilyContext';
 import type { GroceryItem } from '../utils/groceryModels';
 import { MAX_GROCERY_ITEMS } from '../utils/groceryModels';
@@ -32,6 +33,7 @@ export const useGroceryContext = () => {
 };
 
 export const GroceryProvider = ({ children }: { children: ReactNode }) => {
+  const { user } = useAuthContext();
   const { family } = useFamilyContext();
 
   const [items, setItems] = useState<GroceryItem[]>([]);
@@ -102,7 +104,7 @@ export const GroceryProvider = ({ children }: { children: ReactNode }) => {
 
     const { error: err } = await supabase
       .from('grocery_items')
-      .insert([{ family_id: family.id, name: trimmed }]);
+      .insert([{ family_id: family.id, name: trimmed, added_by: user?.id ?? null }]);
 
     if (err) return { error: err.message };
     return {};

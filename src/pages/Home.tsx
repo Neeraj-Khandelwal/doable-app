@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../context/AuthContext';
 import { useTaskContext } from '../context/TaskContext';
@@ -24,17 +24,25 @@ export default function Home() {
   const { user } = useAuthContext();
   const { tasks, createTask, markComplete } = useTaskContext();
   const { habits } = useHabitContext();
-  const { kidProfiles } = useFamilyContext();
+  const { kidProfiles, familyMembers } = useFamilyContext();
   const { items: groceryItems, addItem: addGroceryItem, togglePurchased } = useGroceryContext();
+
+  const partner = useMemo(() => {
+    const m = familyMembers.find((fm) => fm.user_id !== user?.id);
+    if (!m) return null;
+    return { userId: m.user_id, name: m.display_name ?? 'Partner' };
+  }, [familyMembers, user?.id]);
 
   const alarmCount =
     tasks.filter((t) => !!t.reminder_time && !t.completed_at).length +
-    habits.filter((h) => !!h.reminder_time && isScheduledToday(h)).length;
+    habits.filter((h) => !!h.reminder_time && isScheduledToday(h)).length +
+    tasks.filter((t) => t.assigned_to_user_id === user?.id && t.assignment_status === 'pending_acceptance').length;
   const navigate = useNavigate();
 
   const [fullName, setFullName] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [assignees, setAssignees] = useState<string[]>(['me']);
+  const [partnerSelected, setPartnerSelected] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -75,6 +83,21 @@ export default function Home() {
     user?.email?.split('@')[0] ||
     'User';
 
+  const firstName = displayName.split(' ')[0];
+
+  const nameFor = useMemo(() => {
+    const first = (s: string) => s.split(' ')[0];
+    const map: Record<string, string> = {};
+    familyMembers.forEach((m) => {
+      map[m.user_id] = first(m.display_name ?? (m.role === 'owner' ? 'Owner' : 'Partner'));
+    });
+    return (userId: string | null): string | undefined => {
+      if (!userId) return undefined;
+      if (userId === user?.id) return first(displayName);
+      return map[userId];
+    };
+  }, [familyMembers, user?.id, displayName]);
+
   const toggleAssignee = (id: string) => {
     setAssignees((prev) =>
       prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id]
@@ -86,18 +109,33 @@ export default function Home() {
       inputRef.current?.focus();
       return;
     }
-    if (assignees.length === 0) {
+    if (assignees.length === 0 && !partnerSelected) {
       setSaveError('Select at least one assignee.');
       return;
     }
     setSaving(true);
     setSaveError('');
-    const result = await createTask({ title: title.trim(), assignees });
+
+    const payload: Parameters<typeof createTask>[0] = partnerSelected && partner
+      ? {
+          title: title.trim(),
+          assignees: ['me'],
+          assigned_to_user_id: partner.userId,
+          is_private: true,
+        }
+      : {
+          title: title.trim(),
+          assignees,
+          is_private: assignees.length === 1 && assignees[0] === 'me',
+        };
+
+    const result = await createTask(payload);
     if (result?.error) {
       setSaveError(result.error);
     } else {
       setTitle('');
       setAssignees(['me']);
+      setPartnerSelected(false);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2000);
     }
@@ -122,7 +160,7 @@ export default function Home() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-extrabold text-ink">
-            Hey, {displayName}! 👋
+            Hey, {firstName}! 👋
           </h1>
           <p className="text-sm text-ink-3 mt-0.5">What needs to get done today?</p>
         </div>
@@ -156,6 +194,18 @@ export default function Home() {
             </span>
           )}
         </button>
+        <button
+          onClick={() => navigate('/family', { state: { tab: 'account' } })}
+          className="p-2 rounded-xl hover:bg-bg-deep transition-colors"
+          aria-label="Settings"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round"
+            className="w-6 h-6 text-ink-2">
+            <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
+            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
+          </svg>
+        </button>
         </div>
       </div>
 
@@ -187,6 +237,18 @@ export default function Home() {
             >
               Me
             </button>
+            {partner && (
+              <button
+                onClick={() => setPartnerSelected((p) => !p)}
+                className={`px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-all ${
+                  partnerSelected
+                    ? 'bg-sky border-sky text-white'
+                    : 'border-line text-ink-3 bg-white hover:border-sky hover:text-sky'
+                }`}
+              >
+                {partner.name}
+              </button>
+            )}
             {kidProfiles.map((kid) => {
               const color = KID_COLOR_MAP[kid.color] ?? '#7C6FF0';
               const selected = assignees.includes(kid.id);
@@ -206,6 +268,9 @@ export default function Home() {
               );
             })}
           </div>
+          {partnerSelected && (
+            <p className="text-xs text-ink-4 mt-1.5">{partner?.name} will be notified and can accept or reject.</p>
+          )}
         </div>
 
         {saveError && (
@@ -350,9 +415,14 @@ export default function Home() {
                     </svg>
                   )}
                 </button>
-                <span className={`text-sm flex-1 ${item.is_purchased ? 'line-through text-ink-4' : 'text-ink'}`}>
-                  {item.name}
-                </span>
+                <div className="flex-1 min-w-0">
+                  <span className={`text-sm block truncate ${item.is_purchased ? 'line-through text-ink-4' : 'text-ink'}`}>
+                    {item.name}
+                    {nameFor(item.added_by) && (
+                      <span className="text-ink-4 font-normal"> — Added by {nameFor(item.added_by)}</span>
+                    )}
+                  </span>
+                </div>
               </div>
             ))}
             {groceryItems.length > 5 && (

@@ -3,12 +3,13 @@ import type { GroceryItem } from '../../utils/groceryModels';
 
 interface Props {
   item: GroceryItem;
+  addedByName?: string;
   onToggle: (id: string) => void;
   onRename: (id: string, name: string) => void;
   onDelete: (id: string) => void;
 }
 
-export default function GroceryItemCard({ item, onToggle, onRename, onDelete }: Props) {
+export default function GroceryItemCard({ item, addedByName, onToggle, onRename, onDelete }: Props) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(item.name);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -78,6 +79,9 @@ export default function GroceryItemCard({ item, onToggle, onRename, onDelete }: 
           >
             {item.name}
           </span>
+        )}
+        {addedByName && (
+          <span className="text-xs text-gray-400 mt-0.5 block">{addedByName}</span>
         )}
       </div>
 

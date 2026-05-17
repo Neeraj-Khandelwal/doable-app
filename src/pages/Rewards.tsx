@@ -5,6 +5,7 @@ import { useFamilyContext } from '../context/FamilyContext';
 import { useHabitContext } from '../context/HabitContext';
 import type { TaskRating } from '../utils/taskModels';
 import type { Reward } from '../utils/rewardModels';
+import type { KidProfile } from '../utils/familyModels';
 import GivePointsModal from '../components/rewards/GivePointsModal';
 import KidPointsCard from '../components/rewards/KidPointsCard';
 import RewardCard from '../components/rewards/RewardCard';
@@ -12,6 +13,44 @@ import RewardModal from '../components/rewards/RewardModal';
 import RatingConfigModal from '../components/tasks/RatingConfigModal';
 
 type Tab = 'leaderboard' | 'store' | 'history';
+
+function ResetConfirmPanel({
+  kid, balance, resetting, onConfirm, onCancel,
+}: {
+  kid: KidProfile | null;
+  balance: number;
+  resetting: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="p-4 bg-rose/10 border border-rose/30 rounded-2xl space-y-3">
+      <p className="text-sm font-semibold text-ink">
+        Reset <span className="text-rose">{kid?.name ?? 'Kid'}</span>'s points to 0?
+      </p>
+      <p className="text-xs text-ink-3">
+        {balance === 0
+          ? 'Balance is already 0 — nothing to reset.'
+          : `This will deduct ${balance} pts. A reset entry will appear in History.`}
+      </p>
+      <div className="flex gap-2">
+        <button
+          onClick={onCancel}
+          className="flex-1 py-2 border-2 border-line rounded-xl text-sm font-bold text-ink-3"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={onConfirm}
+          disabled={resetting || balance === 0}
+          className="flex-1 py-2 bg-rose text-white rounded-xl text-sm font-bold disabled:opacity-50"
+        >
+          {resetting ? 'Resetting…' : 'Yes, reset'}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 type PointEvent = {
   key: string;
@@ -44,6 +83,8 @@ export default function Rewards() {
   const [ratingConfigOpen, setRatingConfigOpen] = useState(false);
   const [givePointsKidId, setGivePointsKidId] = useState<string | undefined>();
   const [givePointsOpen, setGivePointsOpen] = useState(false);
+  const [confirmResetKidId, setConfirmResetKidId] = useState<string | null>(null);
+  const [resetting, setResetting] = useState(false);
 
   const pointsEarned = useMemo(() => {
     const earned: Record<string, number> = {};
@@ -134,6 +175,15 @@ export default function Rewards() {
     if (result?.error) throw new Error(result.error);
   };
 
+  const handleResetPoints = async (kidId: string) => {
+    const balance = getBalance(kidId);
+    if (balance === 0) { setConfirmResetKidId(null); return; }
+    setResetting(true);
+    await addPointEvent(kidId, -balance, 'Points reset');
+    setResetting(false);
+    setConfirmResetKidId(null);
+  };
+
   const recentRedemptions = redemptions.slice(0, 5);
 
   const TABS: { key: Tab; label: string }[] = [
@@ -192,18 +242,34 @@ export default function Rewards() {
                   Add kids in the Family tab to track their points
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-3">
-                  {sortedKids.map((kid) => (
-                    <KidPointsCard
-                      key={kid.id}
-                      kid={kid}
-                      balance={getBalance(kid.id)}
-                      earned={pointsEarned[kid.id] ?? 0}
-                      spent={pointsSpent[kid.id] ?? 0}
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    {sortedKids.map((kid) => (
+                      <KidPointsCard
+                        key={kid.id}
+                        kid={kid}
+                        balance={getBalance(kid.id)}
+                        earned={pointsEarned[kid.id] ?? 0}
+                        spent={pointsSpent[kid.id] ?? 0}
+                        onGivePoints={isOwner ? () => { setGivePointsKidId(kid.id); setGivePointsOpen(true); } : undefined}
+                        onReset={isOwner ? () => setConfirmResetKidId(kid.id) : undefined}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Inline reset confirmation */}
+                  {confirmResetKidId && (
+                    <ResetConfirmPanel
+                      kid={kidProfiles.find((k) => k.id === confirmResetKidId) ?? null}
+                      balance={getBalance(confirmResetKidId)}
+                      resetting={resetting}
+                      onConfirm={() => void handleResetPoints(confirmResetKidId)}
+                      onCancel={() => setConfirmResetKidId(null)}
                     />
-                  ))}
-                </div>
+                  )}
+                </>
               )}
+
 
               {isOwner && kidProfiles.length > 0 && (
                 <div

@@ -3,6 +3,7 @@ export interface GroceryItem {
   family_id: string;
   name: string;
   is_purchased: boolean;
+  added_by: string | null;
   created_at: string;
   updated_at: string;
 }
