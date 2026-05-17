@@ -1,7 +1,7 @@
 # Doable Android App – Claude Code Development Plan
-**Version:** 2.1  
-**Date:** May 16, 2026  
-**Status:** Active Development — Phases 1–14 Complete  
+**Version:** 2.2  
+**Date:** May 17, 2026  
+**Status:** Active Development — Phases 1–20 Complete + Enhancements  
 **Platform:** Android 10+ (API 29+)  
 **Tech Stack:** React + Tailwind CSS + Supabase + Capacitor + EAS Build  
 
@@ -1854,8 +1854,18 @@ Color scheme: peach, lavender, mint, sky, amber, rose"
 | # | Enhancement | Priority | Phase | Status |
 |---|-------------|----------|-------|--------|
 | 1 | Task Assignment with Accept/Reject + Privacy Controls | High | Phase 14 | ✅ Complete |
-
-*(More enhancements will be added here as testing continues.)*
+| 2 | Partner Display Name | Medium | Phase 15 | ✅ Complete |
+| 3 | Task Templates | Medium | Phase 16 | ✅ Complete |
+| 4 | Push Notifications for Task Assignment | Medium | Phase 17 | ✅ Complete |
+| 5 | Task Subtasks (JSONB checklist) | Medium | Phase 18 | ✅ Complete |
+| 6 | Calendar View for Tasks | Medium | Phase 19 | ✅ Complete |
+| 7 | Voice: Mark Task Done | Medium | Phase 20 | ✅ Complete |
+| 8 | UX Polish (grocery attribution, fasting gamification, rewards reset, display names) | Medium | Enhancement | ✅ Complete |
+| 9 | Real-Mic Voice Screen | High | Enhancement | ✅ Complete |
+| 10 | Photo Moments for Adhoc Points | Medium | Enhancement | ✅ Complete |
+| 11 | 1 Point per Kid Habit Completion | Medium | Enhancement | ✅ Complete |
+| 12 | Bug Fix: Kid task rating modal on Home screen | High | Enhancement | ✅ Complete |
+| 13 | Bug Fix: Me deselectable in task creation | Medium | Enhancement | ✅ Complete |
 
 ---
 
@@ -1929,22 +1939,91 @@ User B sees "📨 Response Needed" section at top of Tasks page
 
 ---
 
+---
+
+# PHASES 15–20: Feature Expansion
+*Completed: May 17, 2026*
+
+## Phase 15 — Partner Display Name
+**DB:** `display_name TEXT` column added to `family_members` (`015_partner_display_name.sql`).  
+**UI:** Family page → Members section has editable display name input. Saved via `updateFamilyMember()`. Used everywhere partner was previously shown as "Partner".
+
+## Phase 16 — Task Templates
+**No DB change.** Hardcoded templates in `src/utils/taskTemplates.ts` (8 presets: School pickup, Grocery run, Pay bills, Clean house, Doctor appt, Homework, Exercise, Team standup).  
+**UI:** Horizontal scroll chip row at top of TaskModal (new task mode only). Selecting a chip fills title/category/priority/recurrence. User can override any field. Active chip shown in plum.
+
+## Phase 17 — Push Notifications for Task Assignment
+**Implementation:** Client-side via Supabase Realtime — no Edge Function needed. `TaskContext` diffs new vs previous tasks after each `fetchTasks()` using a `prevTasksRef`.  
+- New pending task assigned to me → `fireImmediateNotification('New task assigned', ...)`
+- Task I created was accepted → notification to creator
+- Task I created was rejected → notification to creator  
+Reuses existing `fireImmediateNotification()` from `src/services/notificationService.ts`.
+
+## Phase 18 — Task Subtasks
+**DB:** `subtasks JSONB NOT NULL DEFAULT '[]'` column on `tasks` (`016_task_subtasks.sql`).  
+**Model:** `Subtask { id: string; title: string; completed: boolean }` in `taskModels.ts`.  
+**UI:** "Subtasks" section in TaskModal — inline text input + Add button, checkbox list with delete. `TaskCard` shows `X/N subtasks` progress bar when subtasks exist.
+
+## Phase 19 — Calendar View for Tasks
+**No DB change.** Pure frontend using existing task data from `TaskContext`.  
+**Component:** `src/components/tasks/CalendarView.tsx` — 7-column month grid, priority-colored dots per day (rose=high, amber=medium, gray=low), faded for completed. Tapping a day expands task list below grid.  
+**UI:** Toggle in Tasks page header: List / Calendar icons. Navigable month arrows.
+
+## Phase 20 — Voice: Mark Task Done
+**Utility:** `findTaskByTitle(text, tasks)` in `taskParser.ts` — exact match → contains match → word-overlap score.  
+**UI:** `VoiceCapture.tsx` handles `action=complete_task`: calls `findTaskByTitle`, shows confirmation screen ("Mark '[title]' as done?"), calls `markComplete(task.id)` on confirm.
+
+---
+
+# ENHANCEMENT: Real-Mic Voice Screen, Photo Moments, Habit Points
+*Completed: May 17, 2026*
+
+## Voice Task Screen Overhaul
+**Problem:** `/test-voice` was a text simulator. Tasks were: (a) assigned to family instead of Me, (b) only capturing 1–2 words due to `continuous: false`.  
+**Solution:**
+- `TestVoice.tsx` completely rewritten as a dedicated mic screen
+- `continuous: true`, `interimResults: true` — stays open until user taps stop; captures full sentences
+- `selectedAssignees` state defaults to `['me']`, always resets on each new transcript; `handleCreate` uses `selectedAssignees`, never `parsed.assignees`
+- Assignee picker UI: Me (lavender), kid pills (each kid's color), Partner (sky)
+- Session list shown below; stays on same screen after task creation
+- `ManualInput` fallback ("Or type a task") when mic is idle
+- Layout wrapper removed from `/test-voice` route in `App.tsx`
+
+## Photo Moments for Adhoc Points
+**New file:** `src/services/photoService.ts`
+- `pickPhoto(source)` — native Capacitor Camera or web `<input type="file">`
+- `compressDataUrl()` — canvas resize to MAX_DIMENSION=900px, JPEG_QUALITY=0.75 (~100–250KB)
+- `uploadMomentPhoto(userId, blob)` — uploads to `moment-photos` Supabase Storage public bucket
+
+**DB:** `photo_url TEXT` added to `kid_point_events` (`019_moment_photos.sql`).  
+**UI:** `GivePointsModal` — Camera/Gallery buttons in award mode; photo preview with ✕ remove; uploaded URL passed through `addPointEvent`. `Rewards.tsx` History tab renders photo above event row.
+
+## Kid Habit Points (1pt per completion)
+**Implementation:** In `HabitContext.completeHabit()`, when `assignee !== 'me'`, inserts a `kid_point_events` row with `type: 'habit_completion'`, `points: 1` before the existing 7-day streak bonus check.
+
+## Bug Fixes
+- **Home page kid task completion:** `handleCompletePress(task)` checks `isKidTask(task)` — routes to `RatingModal` instead of calling `markComplete()` directly
+- **Task modal Me deselectable:** `AdultAssignee` type extended with `'none'`; Me pill toggles off; `handleSave` only includes adult assignees that aren't `'none'`
+
+---
+
 ## Summary
 
-This plan covers Phases 1–14 of the Doable app. All core MVP phases (1–12) and the first post-MVP enhancement (Phase 14) are complete. Phase 13 (Play Store publication) is next.
+This plan covers Phases 1–20 of the Doable app plus post-Phase-14 enhancements. All core MVP phases (1–12), Phase 14 (task assignment), Phases 15–20 (feature expansion), and recent enhancements are complete.
 
 **Current Status:**
 - Phases 1–12: ✅ MVP complete
 - Phase 13: ⏳ Play Store — next milestone
 - Phase 14: ✅ Task assignment + privacy complete
+- Phases 15–20: ✅ Display name, templates, notifications, subtasks, calendar, voice mark-done
+- Enhancements: ✅ Real-mic voice, photo moments, habit points, bug fixes
 
 **Remaining Work:**
-- Run `supabase/migrations/014_task_assignment.sql` in Supabase SQL Editor (if not done)
 - Phase 13: Generate signed AAB → upload to Play Store
-- Phase 14.6: Push notifications for task assignment workflow
+- Run any pending migrations in Supabase SQL Editor (017, 018, 019 if not yet applied)
 
 ---
 
 **Document Status:** Active Development  
-**Last Updated:** May 16, 2026  
+**Last Updated:** May 17, 2026  
 **Next Step:** Phase 13 — Play Store publication

@@ -5,10 +5,10 @@
 
 | **Field** | **Value** |
 |-----------|-----------|
-| **Version** | 2.0 — Post-MVP Enhancements |
-| **Date** | May 16, 2026 |
+| **Version** | 2.2 — Voice Mic, Photo Moments, Habit Points |
+| **Date** | May 17, 2026 |
 | **Platform** | Android (Google Play Store) |
-| **Status** | Active Development — Phases 1–14 Complete |
+| **Status** | Active Development — Phases 1–20 Complete + Enhancements |
 | **Author** | Personal Learning Project |
 | **Built with** | React + TypeScript + Vite + Tailwind CSS v4 + Supabase + Capacitor + EAS Build |
 
@@ -36,6 +36,8 @@ The app is designed for a family of up to 6 members: 2 parents and up to 4 kids.
 - Real-time sync between parent devices for shared family tasks
 - **Phase 11 ✅:** Zero-friction task creation via voice commands — "OK Google, add task in Doable: ..."
 - **Phase 14 ✅:** Adult-to-adult task assignment with accept/reject workflow + personal task privacy
+- **Phases 15–20 ✅:** Partner display name, task templates, push notifications, task subtasks, calendar view, voice mark-done
+- **Enhancements ✅:** Real-mic voice screen, photo moments for rewards, 1 pt per kid habit completion, bug fixes
 - Build, publish, and launch on Google Play Store
 
 ---
@@ -234,7 +236,7 @@ Three tabs: **🏆 Points** · **🎁 Store** · **📜 History**
 - Chronological list of all point events (task ratings, streak bonuses, adhoc awards)
 - Each row: icon, reason/title, kid name badge, date, ±points
 
-**Give Points modal:** kid selector, +Award / −Deduct toggle, amount (quick picks + custom), reason (quick picks + custom), save button — reusable across sessions.
+**Give Points modal:** kid selector, +Award / −Deduct toggle, amount (quick picks + custom), reason (quick picks + custom), optional **photo capture** (camera or gallery, compressed to ≤900px JPEG, uploaded to `moment-photos` Supabase Storage bucket), save button — reusable across sessions. Photos render above the event row in History tab.
 
 ---
 
@@ -251,17 +253,24 @@ Three tabs: **🏆 Points** · **🎁 Store** · **📜 History**
 
 ### 3.9 Voice Task Screens — Phase 11 ✅
 
-**Test Voice (`/test-voice`):**
-- Text input for typing a natural-language command
-- "Preview Parse" button shows parsed result: title, due date, assignees, priority, category
-- "Launch →" button navigates to `/voice-capture?action=add_task&text=...`
-- 8 built-in example commands
+**Voice Task Screen (`/test-voice`):**
+- Dedicated full-screen mic interface — no navigation away needed
+- Large mic button: **Idle → Listening → Stopped** states
+- Uses Web Speech API with `continuous: true` and `interimResults: true` — keeps listening until user taps stop; captures full sentences, not just first 1–2 words
+- Live transcript shown as user speaks
+- On stop: parsed preview card shows — Task title, due date, priority
+- **Assignee picker** (defaults to Me, always): Me pill (lavender) + kid pills (each kid's color) + Partner pill (sky) — multi-select, resets to "Me" on each new recording
+- Redo / Add Task buttons; stays on same screen after creation
+- **Session list** below shows all tasks created this session with ✓ checkmarks
+- **Manual input fallback** ("Or type a task") shown when mic is idle
+- `handleCreate` uses `selectedAssignees` — parsed text never overrides assignee default
 
 **Voice Capture (`/voice-capture`):**
 - Reads URL params; calls `parseDeepLink()` then `parseTaskText()`
 - Opens `TaskModal` pre-populated with parsed values
 - On save: calls `createTask()` then navigates to `/tasks`
 - Handles `invite` action by redirecting to `/join?code=`
+- Handles `complete_task` action: matches task by title via `findTaskByTitle()`, shows confirmation screen, marks complete on confirm
 
 ---
 
@@ -310,6 +319,7 @@ When User A assigns a task to Partner (User B):
 - Target count per day (e.g. drink water 8x)
 - 7-day dot calendar: green (done), red (missed), orange (today not yet done)
 - Streak counter — computed from consecutive scheduled days with completions
+- **1 point per completion:** every time a kid completes a habit, 1 point is auto-awarded (type: `habit_completion`) before the streak check
 - **7-day streak bonus:** completing a habit every scheduled day for 7 consecutive days awards +5 bonus points to kid, fires confetti, shows toast
 - Habits reset at midnight — tracked by date strings (YYYY-MM-DD)
 
@@ -325,7 +335,8 @@ When User A assigns a task to Partner (User B):
 - Ratings are configurable in Manage Ratings modal
 - Each rating event is stored in `kid_point_events` table (type: `task_rating`)
 - Streak bonuses stored in same table (type: `streak_bonus`)
-- Adhoc awards/deductions stored in same table (type: `adhoc`)
+- Adhoc awards/deductions stored in same table (type: `adhoc`) — can include a `photo_url` for moment capture
+- Habit completions stored in same table (type: `habit_completion`) — 1 pt per completion
 - Kid points balance = SUM of all `kid_point_events` for that kid
 
 ### 4.5 Redeemable Rewards
@@ -425,7 +436,7 @@ Default rewards (configurable):
 | `rating_types` | id, family_id, label, emoji, point_value | Family |
 | `rewards` | id, family_id, name, point_cost | Family |
 | `redemption_history` | id, kid_id, family_id, reward_id, points_deducted, created_at | Family |
-| `kid_point_events` | id, kid_id, family_id, points, reason, type (adhoc/streak_bonus/task_rating), habit_id, created_by, event_date | Family |
+| `kid_point_events` | id, kid_id, family_id, points, reason, type (adhoc/streak_bonus/task_rating/habit_completion), habit_id, created_by, event_date, **photo_url** | Family |
 | `alarms` | id, user_id, family_id, time, label, enabled, repeat_days[], sound | User |
 
 ### Migration Files
@@ -443,6 +454,11 @@ Default rewards (configurable):
 | `010_alarms.sql` | alarms table + patch ALTER TABLEs + schema cache reload |
 | `011_fcm_tokens.sql` | FCM push notification tokens |
 | `014_task_assignment.sql` | assigned_to_user_id, assignment_status, rejection_reason, responded_at, is_private — updated RLS |
+| `015_partner_display_name.sql` | display_name column on family_members |
+| `016_task_subtasks.sql` | subtasks JSONB column on tasks (checklist items per task) |
+| `017_fix_privacy_and_display_name.sql` | Privacy and display name fixes |
+| `018_grocery_added_by.sql` | added_by column on grocery_items |
+| `019_moment_photos.sql` | photo_url TEXT column on kid_point_events; moment-photos Storage bucket |
 
 ---
 
@@ -498,20 +514,18 @@ Default rewards (configurable):
 ## 8. Out of Scope (MVP)
 
 - iOS version (Siri Shortcuts planned for v2.0)
-- Dark mode (planned for v1.1)
+- Dark mode (planned)
 - Third-party login (Google, Apple)
 - Task comments or in-app chat
-- Calendar view
 - File attachments on tasks
 - Kids logging in to the app
 - Multi-language support (English only v1.0)
 - Offline voice processing
-- Voice command to update/complete tasks (planned for v1.2)
+- Voice task update: "OK Google, reschedule homework to Friday in Doable"
 - More than 6 family members
-- Native alarm sound (requires Capacitor — Phase 12)
-- Background alarm firing when app is closed (requires Capacitor — Phase 12)
-- Partner display name (currently shown as "Partner")
-- Push notifications for task assignment accept/reject (Phase 14.6 — not yet built)
+- Native alarm sound (requires Capacitor foreground service)
+- Background alarm firing when app is closed (requires Capacitor foreground service)
+- In-app family chat
 
 ---
 
@@ -545,7 +559,18 @@ Default rewards (configurable):
 | 24 | Personal tasks (Me private) hidden from partner via RLS | ✅ Built |
 | 25 | Rejected task shows reason and Reassign/Delete options to creator | ✅ Built |
 | 26 | Adhoc reward section with "Give Bonus Points" on Rewards leaderboard | ✅ Built |
-| 27 | App is published on Google Play Store and installable on Android 10+ | ⏳ Phase 13 |
+| 27 | Partner display name stored and shown everywhere (task assignment, voice screen) | ✅ Built |
+| 28 | Task templates — horizontal chip picker pre-fills title/category/priority/recurrence | ✅ Built |
+| 29 | Push notifications fire when partner is assigned a task or accepts/rejects | ✅ Built |
+| 30 | Task subtasks — JSONB checklist with inline add/check/delete; progress shown on TaskCard | ✅ Built |
+| 31 | Calendar view for tasks — monthly grid with priority dots; tap day to expand task list | ✅ Built |
+| 32 | Voice mark-done — `/voice-capture?action=complete_task` matches task by title, shows confirmation | ✅ Built |
+| 33 | Real-mic voice screen — continuous speech, live transcript, Me-defaulted assignee picker, session list | ✅ Built |
+| 34 | Photo moment capture on adhoc points — camera/gallery → compressed → Supabase Storage → History tab | ✅ Built |
+| 35 | Kids earn 1 point automatically per habit completion (in addition to streak bonuses) | ✅ Built |
+| 36 | Kid task completion from Home screen shows rating modal (bug fix) | ✅ Built |
+| 37 | Task creation allows kid-only assignment — Me pill is deselectable (bug fix) | ✅ Built |
+| 38 | App is published on Google Play Store and installable on Android 10+ | ⏳ Phase 13 |
 
 ---
 
@@ -567,6 +592,14 @@ Default rewards (configurable):
 | Phase 12 | Android wrap — Capacitor, APK build, keystore, EAS config | ✅ Complete |
 | Phase 13 | Play Store — AAB upload, App Actions, store listing | ⏳ Upcoming |
 | Phase 14 | Task assignment with accept/reject + privacy model | ✅ Complete |
+| Phase 15 | Partner display name — stored in family_members, shown in all assignment flows | ✅ Complete |
+| Phase 16 | Task templates — 8 pre-built chips in TaskModal (new task mode only) | ✅ Complete |
+| Phase 17 | Push notifications — assignment, accept, reject via Supabase Realtime diff | ✅ Complete |
+| Phase 18 | Task subtasks — JSONB checklist, inline UI, progress on TaskCard | ✅ Complete |
+| Phase 19 | Calendar view — monthly grid with priority dots, expandable day list | ✅ Complete |
+| Phase 20 | Voice mark-done — complete_task deep link + findTaskByTitle matcher | ✅ Complete |
+| Enhancement | UX polish — grocery attribution, fasting gamification, rewards reset, display names | ✅ Complete |
+| Enhancement | Real-mic voice screen, photo moments, 1pt/habit, bug fixes | ✅ Complete |
 
 ---
 
@@ -575,22 +608,21 @@ Default rewards (configurable):
 ### v1.1 (Q3 2026)
 - Dark mode support
 - Multi-language support (Spanish, French, German)
-- Calendar view for tasks and habits
-- Task templates
-- Push notifications for task assignment accept/reject (Phase 14.6)
-- Partner display name stored and shown in assignment flow
+- Calendar view for habits (tasks calendar ✅ already built)
+- Native background alarm firing (Capacitor foreground service)
+- Voice task update: "OK Google, reschedule homework to Friday in Doable"
 
 ### v1.2 (Q4 2026)
-- Voice command for marking tasks done: "OK Google, mark [task] done in Doable"
-- Voice task update: "OK Google, reschedule homework to Friday in Doable"
-- Fuzzy matching for voice-to-task name matching
-- Native background alarm firing (Capacitor foreground service)
+- Habit calendar view
+- Offline mode with local-first sync
+- Task recurrence exceptions (skip a day)
+- Kid login / kid-facing view (read-only points + tasks)
 
 ### v2.0 (2027)
 - iOS version with Siri Shortcuts
 - iPad support
 - Third-party login (Google, Apple)
-- Task attachments and subtasks
+- Task attachments
 - In-app family chat
 
 ---
@@ -599,7 +631,7 @@ Default rewards (configurable):
 
 | Metric | Target |
 |--------|--------|
-| Feature completion | 26/27 criteria met |
+| Feature completion | 37/38 criteria met |
 | App rating | 4.5+ stars on Play Store |
 | Real-time sync latency | < 3 seconds |
 | Daily active users | 100+ by month 3 |
@@ -613,8 +645,8 @@ Default rewards (configurable):
 | Field | Value |
 |-------|-------|
 | **Prepared by** | Personal Learning Project |
-| **Status** | Phases 1–14 complete — Phase 13 (Play Store) next |
-| **Last updated** | May 16, 2026 |
+| **Status** | Phases 1–20 complete + enhancements — Phase 13 (Play Store) next |
+| **Last updated** | May 17, 2026 |
 | **Next review** | After Phase 13 completion |
 
 ---
