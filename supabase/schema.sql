@@ -11,13 +11,15 @@
 -- SECTION 1 — TEARDOWN (drop everything in dependency order)
 -- =============================================================================
 
--- Storage policies
+-- Storage policies (safe to drop via SQL)
 DROP POLICY IF EXISTS "moment_photos_insert" ON storage.objects;
 DROP POLICY IF EXISTS "moment_photos_select"  ON storage.objects;
 DROP POLICY IF EXISTS "moment_photos_delete"  ON storage.objects;
 
--- Storage bucket (photos will be lost)
-DELETE FROM storage.buckets WHERE id = 'moment-photos';
+-- NOTE: The moment-photos Storage bucket cannot be deleted via SQL.
+-- If you need a clean bucket, go to:
+--   Supabase Dashboard → Storage → moment-photos → Delete bucket
+-- (only needed if you want to wipe existing photos)
 
 -- Tables — most-dependent first so FK constraints don't block drops
 DROP TABLE IF EXISTS kid_point_events    CASCADE;
