@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1024px; height: 500px; overflow: hidden; background: #fff; }
+
+  .banner {
+    width: 1024px;
+    height: 500px;
+    background: linear-gradient(135deg, #5B52CC 0%, #7C6FF0 45%, #9B6FD4 100%);
+    display: flex;
+    align-items: center;
+    padding: 0 72px;
+    position: relative;
+    overflow: hidden;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+  }
+
+  /* Decorative circles in background */
+  .circle1 {
+    position: absolute;
+    width: 520px; height: 520px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+    right: -80px; top: -140px;
+  }
+  .circle2 {
+    position: absolute;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    right: 180px; bottom: -120px;
+  }
+  .circle3 {
+    position: absolute;
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    left: 460px; top: 30px;
+  }
+
+  /* Left side: branding */
+  .left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    z-index: 1;
+  }
+
+  .logo-row {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 18px;
+  }
+
+  /* Mini icon */
+  .mini-icon {
+    width: 72px; height: 72px;
+    background: rgba(255,255,255,0.18);
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+  }
+
+  .app-name {
+    font-size: 72px;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: -2px;
+    line-height: 1;
+  }
+
+  .tagline {
+    font-size: 26px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.88);
+    line-height: 1.4;
+    max-width: 400px;
+    margin-bottom: 36px;
+  }
+
+  /* Feature pills */
+  .pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    max-width: 440px;
+  }
+
+  .pill {
+    background: rgba(255,255,255,0.18);
+    border: 1.5px solid rgba(255,255,255,0.3);
+    border-radius: 100px;
+    padding: 7px 18px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+  }
+
+  /* Right side: feature cards stack */
+  .right {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    z-index: 1;
+    margin-left: 40px;
+  }
+
+  .card {
+    background: rgba(255,255,255,0.14);
+    border: 1.5px solid rgba(255,255,255,0.22);
+    border-radius: 16px;
+    padding: 14px 22px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 320px;
+    backdrop-filter: blur(4px);
+  }
+
+  .card-icon {
+    font-size: 28px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .card-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .card-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .card-sub {
+    font-size: 13px;
+    color: rgba(255,255,255,0.72);
+    font-weight: 400;
+  }
+
+  /* Accent dot */
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+  <div class="banner">
+    <div class="circle1"></div>
+    <div class="circle2"></div>
+    <div class="circle3"></div>
+
+    <!-- Left: branding + pills -->
+    <div class="left">
+      <div class="logo-row">
+        <div class="mini-icon">🏠</div>
+        <div class="app-name">doable</div>
+      </div>
+      <div class="tagline">Family tasks, habits &amp; rewards — all in one place.</div>
+      <div class="pills">
+        <span class="pill">✓ Tasks</span>
+        <span class="pill">🔥 Habits</span>
+        <span class="pill">🎁 Rewards</span>
+        <span class="pill">🛒 Grocery</span>
+        <span class="pill">⏱ Fasting</span>
+        <span class="pill">🎙 Voice</span>
+      </div>
+    </div>
+
+    <!-- Right: feature cards -->
+    <div class="right">
+      <div class="card">
+        <div class="card-icon">👨‍👩‍👧</div>
+        <div class="card-text">
+          <div class="card-title">Family Sync</div>
+          <div class="card-sub">Real-time across all devices</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-icon">⭐</div>
+        <div class="card-text">
+          <div class="card-title">Kid Rewards</div>
+          <div class="card-sub">Points for tasks &amp; habits</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🎙</div>
+        <div class="card-text">
+          <div class="card-title">Voice Tasks</div>
+          <div class="card-sub">Speak to create instantly</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
