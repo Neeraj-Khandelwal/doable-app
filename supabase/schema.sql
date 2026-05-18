@@ -46,24 +46,8 @@ DROP FUNCTION IF EXISTS update_rewards_updated_at()  CASCADE;
 
 
 -- =============================================================================
--- SECTION 2 — HELPER FUNCTIONS
+-- SECTION 2 — FUNCTIONS (no table dependencies)
 -- =============================================================================
-
--- Membership check used by all RLS policies.
--- SECURITY DEFINER bypasses RLS on family_members to avoid circular dependency.
-CREATE OR REPLACE FUNCTION is_family_member(fid uuid)
-RETURNS boolean
-LANGUAGE sql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM family_members
-    WHERE family_id = fid AND user_id = auth.uid()
-  );
-$$;
-
-GRANT EXECUTE ON FUNCTION is_family_member(uuid) TO anon, authenticated, service_role;
 
 -- Generic updated_at trigger function (reused by all tables that have updated_at).
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -73,6 +57,8 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+-- NOTE: is_family_member() is created in Section 3, after family_members exists.
 
 
 -- =============================================================================
@@ -105,6 +91,24 @@ CREATE TABLE family_members (
   joined_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE (family_id, user_id)
 );
+
+-- Membership check used by all RLS policies.
+-- Defined here (after family_members) because LANGUAGE sql validates table
+-- references at creation time — the table must already exist.
+-- SECURITY DEFINER bypasses RLS on family_members to avoid circular dependency.
+CREATE OR REPLACE FUNCTION is_family_member(fid uuid)
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM family_members
+    WHERE family_id = fid AND user_id = auth.uid()
+  );
+$$;
+
+GRANT EXECUTE ON FUNCTION is_family_member(uuid) TO anon, authenticated, service_role;
 
 -- -----------------------------------------------------------------------------
 -- kid_profiles
