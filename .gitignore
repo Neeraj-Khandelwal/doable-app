@@ -30,3 +30,6 @@ npm-debug.log*
 
 # Android Studio IDE files
 .idea/
+
+# Android release build artifacts (APK/AAB — generated, not source)
+android/app/release/
