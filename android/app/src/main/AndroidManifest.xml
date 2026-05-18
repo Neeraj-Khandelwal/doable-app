@@ -64,6 +64,9 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- Microphone for voice task creation (Web Speech API) -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
     <!-- Required when asking Android's Clock app to create an alarm. -->
     <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
 
