@@ -14,11 +14,10 @@ interface KidPointsCardProps {
   balance: number;
   earned: number;
   spent: number;
-  rank?: number;
   onReset?: () => void;
 }
 
-export default function KidPointsCard({ kid, balance, earned, spent, rank, onReset }: KidPointsCardProps) {
+export default function KidPointsCard({ kid, balance, earned, spent, onReset }: KidPointsCardProps) {
   const colors = KID_COLOR_MAP[kid.color] ?? KID_COLOR_MAP.lavender;
 
   return (
@@ -35,12 +34,7 @@ export default function KidPointsCard({ kid, balance, earned, spent, rank, onRes
           {kid.name.charAt(0).toUpperCase()}
         </div>
         <span className="font-bold text-gray-900 text-sm flex-1 truncate">{kid.name}</span>
-        {rank !== undefined && rank <= 3 && (
-          <span className="text-lg flex-shrink-0">
-            {rank === 1 ? '🥇' : rank === 2 ? '🥈' : '🥉'}
-          </span>
-        )}
-        {onReset && (
+{onReset && (
           <button
             onClick={onReset}
             className="w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-sm transition-opacity hover:opacity-80 flex-shrink-0"

@@ -271,14 +271,13 @@ export default function Rewards() {
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-3">
-                  {sortedKids.map((kid, idx) => (
+                  {sortedKids.map((kid) => (
                     <KidPointsCard
                       key={kid.id}
                       kid={kid}
                       balance={getBalance(kid.id)}
                       earned={pointsEarned[kid.id] ?? 0}
                       spent={pointsSpent[kid.id] ?? 0}
-                      rank={idx + 1}
                       onReset={isOwner ? () => { setResetKidId(kid.id); setResetModalOpen(true); } : undefined}
                     />
                   ))}
