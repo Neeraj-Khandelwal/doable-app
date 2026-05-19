@@ -38,6 +38,7 @@ export default function VoiceTaskScreen() {
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>(['me']);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [micBlocked, setMicBlocked] = useState(false);
   const [createdTasks, setCreatedTasks] = useState<CreatedTask[]>([]);
 
   const recognitionRef = useRef<ISpeechRecognition | null>(null);
@@ -55,6 +56,7 @@ export default function VoiceTaskScreen() {
     setTranscript('');
     setParsed(null);
     setError('');
+    setMicBlocked(false);
     handledRef.current = false;
     setMicState('listening');
 
@@ -86,6 +88,11 @@ export default function VoiceTaskScreen() {
 
     r.onerror = (e) => {
       if (e.error === 'aborted') return;
+      if (e.error === 'not-allowed') {
+        setMicBlocked(true);
+        setMicState('idle');
+        return;
+      }
       setError(e.error === 'no-speech' ? 'No speech detected. Try again.' : `Mic error: ${e.error}`);
       setMicState('idle');
     };
@@ -140,6 +147,7 @@ export default function VoiceTaskScreen() {
     setSelectedAssignees(['me']);
     setMicState('idle');
     setError('');
+    setMicBlocked(false);
   };
 
   const toggleAssignee = (id: string) => {
@@ -199,7 +207,23 @@ return (
         </p>
       </div>
 
-      {/* Error */}
+      {/* Microphone permission denied */}
+      {micBlocked && (
+        <div className="mb-4 bg-rose/10 border border-rose/30 rounded-2xl p-4 flex gap-3 items-start">
+          <span className="text-2xl flex-shrink-0">🎙️</span>
+          <div className="flex-1">
+            <p className="text-sm font-bold text-rose">Microphone access blocked</p>
+            <p className="text-xs text-rose/80 mt-1 leading-relaxed">
+              Please allow microphone access to use voice input.
+            </p>
+            <p className="text-xs text-ink-3 mt-2 leading-relaxed">
+              In Chrome: tap the <strong>🔒 lock icon</strong> in the address bar → <strong>Microphone</strong> → <strong>Allow</strong>, then refresh the page.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Generic errors */}
       {error && (
         <div className="mb-4 px-4 py-3 bg-rose/10 border border-rose/30 rounded-xl text-sm text-rose font-medium text-center">
           {error}
