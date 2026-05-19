@@ -8,7 +8,7 @@ import type { TaskPriority } from '../../utils/taskModels';
 interface ISpeechRecognition extends EventTarget {
   lang: string; interimResults: boolean; maxAlternatives: number; continuous: boolean;
   start(): void; stop(): void; abort(): void;
-  onresult: ((e: { results: { [i: number]: { [j: number]: { transcript: string }; isFinal: boolean; length: number }; length: number } }) => void) | null;
+  onresult: ((e: { results: { [i: number]: { [j: number]: { transcript: string }; isFinal: boolean; length: number }; length: number }; resultIndex: number }) => void) | null;
   onerror: ((e: { error: string }) => void) | null;
   onend: (() => void) | null;
 }
@@ -70,9 +70,10 @@ export default function VoiceTaskScreen() {
     let finalText = '';
 
     r.onresult = (e) => {
-      // Accumulate all final segments + latest interim segment
+      // Only process results from resultIndex onward — starting from 0 would
+      // re-add already-finalized segments and duplicate the transcript.
       let interim = '';
-      for (let i = 0; i < e.results.length; i++) {
+      for (let i = e.resultIndex; i < e.results.length; i++) {
         const result = e.results[i];
         if (result[0]) {
           if (result.isFinal) {
@@ -82,7 +83,6 @@ export default function VoiceTaskScreen() {
           }
         }
       }
-      // Show live combined text
       setTranscript((finalText + interim).trim());
     };
 
