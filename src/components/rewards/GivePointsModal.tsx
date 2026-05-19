@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { KidProfile } from '../../utils/familyModels';
 import { pickPhoto, uploadMomentPhoto } from '../../services/photoService';
 
@@ -30,8 +30,12 @@ export default function GivePointsModal({ isOpen, onClose, kids, defaultKidId, u
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
+  // Track previous open state so we only reset on open transition (false→true),
+  // not when `kids` gets a new array reference (which happens on page refocus
+  // after the camera/gallery picker closes, and would otherwise wipe the form).
+  const wasOpenRef = useRef(false);
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !wasOpenRef.current) {
       setSelectedKidId(defaultKidId ?? kids[0]?.id ?? '');
       setMode('+');
       setAmount('');
@@ -41,7 +45,8 @@ export default function GivePointsModal({ isOpen, onClose, kids, defaultKidId, u
       setError('');
       setSaving(false);
     }
-  }, [isOpen, defaultKidId, kids]);
+    wasOpenRef.current = isOpen;
+  });
 
   if (!isOpen) return null;
 
