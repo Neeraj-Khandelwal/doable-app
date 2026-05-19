@@ -6,7 +6,6 @@ import { useFamilyContext } from '../context/FamilyContext';
 import { useHabitContext } from '../context/HabitContext';
 import type { TaskRating } from '../utils/taskModels';
 import type { Reward } from '../utils/rewardModels';
-import type { KidProfile } from '../utils/familyModels';
 import GivePointsModal from '../components/rewards/GivePointsModal';
 import KidPointsCard from '../components/rewards/KidPointsCard';
 import RewardCard from '../components/rewards/RewardCard';
@@ -14,44 +13,6 @@ import RewardModal from '../components/rewards/RewardModal';
 import RatingConfigModal from '../components/tasks/RatingConfigModal';
 
 type Tab = 'leaderboard' | 'store' | 'history';
-
-function ResetConfirmPanel({
-  kid, balance, resetting, onConfirm, onCancel,
-}: {
-  kid: KidProfile | null;
-  balance: number;
-  resetting: boolean;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
-  return (
-    <div className="p-4 bg-rose/10 border border-rose/30 rounded-2xl space-y-3">
-      <p className="text-sm font-semibold text-ink">
-        Reset <span className="text-rose">{kid?.name ?? 'Kid'}</span>'s points to 0?
-      </p>
-      <p className="text-xs text-ink-3">
-        {balance === 0
-          ? 'Balance is already 0 — nothing to reset.'
-          : `This will deduct ${balance} pts. A reset entry will appear in History.`}
-      </p>
-      <div className="flex gap-2">
-        <button
-          onClick={onCancel}
-          className="flex-1 py-2 border-2 border-line rounded-xl text-sm font-bold text-ink-3"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={onConfirm}
-          disabled={resetting || balance === 0}
-          className="flex-1 py-2 bg-rose text-white rounded-xl text-sm font-bold disabled:opacity-50"
-        >
-          {resetting ? 'Resetting…' : 'Yes, reset'}
-        </button>
-      </div>
-    </div>
-  );
-}
 
 type PointEvent = {
   key: string;
