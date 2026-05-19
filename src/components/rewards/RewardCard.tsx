@@ -2,6 +2,28 @@ import { useState } from 'react';
 import type { Reward } from '../../utils/rewardModels';
 import type { KidProfile } from '../../utils/familyModels';
 
+function ImageLightbox({ src, onClose }: { src: string; onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 text-white text-3xl font-bold leading-none hover:opacity-80"
+      >
+        ×
+      </button>
+      <img
+        src={src}
+        alt="Reward"
+        className="max-w-full max-h-full object-contain rounded-xl"
+        onClick={(e) => e.stopPropagation()}
+      />
+    </div>
+  );
+}
+
 const KID_COLOR_MAP: Record<string, string> = {
   lavender: '#b39ddb',
   peach: '#ffab91',
@@ -23,6 +45,7 @@ interface RewardCardProps {
 export default function RewardCard({ reward, kids, getBalance, onRedeem, onEdit, isOwner }: RewardCardProps) {
   const [confirming, setConfirming] = useState<string | null>(null); // kidId pending confirm
   const [redeeming, setRedeeming] = useState<string | null>(null);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   const handleRedeemClick = (kidId: string) => {
     setConfirming(kidId);
@@ -36,8 +59,30 @@ export default function RewardCard({ reward, kids, getBalance, onRedeem, onEdit,
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-      <div className="flex items-start gap-3">
+    <>
+      {lightboxOpen && reward.image_url && (
+        <ImageLightbox src={reward.image_url} onClose={() => setLightboxOpen(false)} />
+      )}
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      {/* Image banner (if set) */}
+      {reward.image_url && (
+        <div
+          className="relative w-full h-28 cursor-pointer"
+          onClick={() => setLightboxOpen(true)}
+        >
+          <img
+            src={reward.image_url}
+            alt={reward.title}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-black/10 flex items-end justify-end p-2">
+            <span className="text-xs font-semibold text-white bg-black/40 px-2 py-0.5 rounded-full">
+              View full image
+            </span>
+          </div>
+        </div>
+      )}
+      <div className="flex items-start gap-3 p-4">
         {/* Icon */}
         <div className="w-12 h-12 rounded-xl bg-amber/15 flex items-center justify-center text-2xl flex-shrink-0">
           {reward.icon}
@@ -120,5 +165,6 @@ export default function RewardCard({ reward, kids, getBalance, onRedeem, onEdit,
         </div>
       </div>
     </div>
+    </>
   );
 }

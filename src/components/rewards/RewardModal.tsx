@@ -14,6 +14,7 @@ export default function RewardModal({ isOpen, onClose, onSave, onDelete, reward 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [icon, setIcon] = useState('🎁');
+  const [imageUrl, setImageUrl] = useState('');
   const [pointsCost, setPointsCost] = useState(10);
   const [customPoints, setCustomPoints] = useState('');
   const [saving, setSaving] = useState(false);
@@ -26,12 +27,14 @@ export default function RewardModal({ isOpen, onClose, onSave, onDelete, reward 
       setTitle(reward.title);
       setDescription(reward.description ?? '');
       setIcon(reward.icon);
+      setImageUrl(reward.image_url ?? '');
       setPointsCost(reward.points_cost);
       setCustomPoints(POINT_PRESETS.includes(reward.points_cost) ? '' : String(reward.points_cost));
     } else {
       setTitle('');
       setDescription('');
       setIcon('🎁');
+      setImageUrl('');
       setPointsCost(10);
       setCustomPoints('');
     }
@@ -53,6 +56,7 @@ export default function RewardModal({ isOpen, onClose, onSave, onDelete, reward 
         title: title.trim(),
         description: description.trim() || null,
         icon,
+        image_url: imageUrl.trim() || null,
         points_cost: effectivePoints,
       });
     } catch (err) {
@@ -164,7 +168,7 @@ export default function RewardModal({ isOpen, onClose, onSave, onDelete, reward 
           </div>
 
           {/* Description */}
-          <div className="mb-6">
+          <div className="mb-4">
             <label className="block text-sm font-semibold text-gray-700 mb-1">Description (optional)</label>
             <textarea
               value={description}
@@ -173,6 +177,30 @@ export default function RewardModal({ isOpen, onClose, onSave, onDelete, reward 
               rows={2}
               className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber bg-gray-50 resize-none"
             />
+          </div>
+
+          {/* Image URL */}
+          <div className="mb-6">
+            <label className="block text-sm font-semibold text-gray-700 mb-1">
+              Image URL <span className="font-normal text-gray-400">(optional)</span>
+            </label>
+            <input
+              type="url"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              placeholder="https://..."
+              className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber bg-gray-50"
+            />
+            {imageUrl.trim() && (
+              <div className="mt-2 w-full h-28 rounded-lg overflow-hidden border border-gray-200">
+                <img
+                  src={imageUrl.trim()}
+                  alt="Preview"
+                  className="w-full h-full object-cover"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+              </div>
+            )}
           </div>
         </div>
 

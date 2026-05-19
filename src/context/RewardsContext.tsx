@@ -16,6 +16,7 @@ type RewardsContextValue = {
   deleteReward: (id: string) => Promise<{ error?: string }>;
   redeemReward: (rewardId: string, kidId: string, currentBalance: number) => Promise<{ error?: string }>;
   addPointEvent: (kidId: string, points: number, reason: string) => Promise<{ error?: string }>;
+  resetKidPoints: (kidId: string, includeHistory: boolean, currentBalance: number) => Promise<{ error?: string }>;
   refreshRewards: () => Promise<void>;
 };
 
@@ -140,6 +141,37 @@ export const RewardsProvider = ({ children }: { children: ReactNode }) => {
     return {};
   };
 
+  const resetKidPoints = async (kidId: string, includeHistory: boolean, currentBalance: number) => {
+    if (!family?.id || !user?.id) return { error: 'Not authenticated' };
+
+    if (includeHistory) {
+      // Delete all point events and redemptions for this kid — full wipe
+      const [evtRes, redRes] = await Promise.all([
+        supabase.from('kid_point_events').delete().eq('kid_id', kidId).eq('family_id', family.id),
+        supabase.from('reward_redemptions').delete().eq('kid_id', kidId).eq('family_id', family.id),
+      ]);
+      if (evtRes.error) return { error: evtRes.error.message };
+      if (redRes.error) return { error: redRes.error.message };
+      await fetchAll();
+    } else {
+      // Balance-only reset: insert a negative correction event so balance becomes 0
+      if (currentBalance === 0) return {};
+      const { error: insertError } = await supabase.from('kid_point_events').insert([{
+        kid_id: kidId,
+        family_id: family.id,
+        points: -currentBalance,
+        reason: 'Points reset',
+        type: 'adhoc',
+        habit_id: null,
+        created_by: user.id,
+        event_date: todayStr(),
+      }]);
+      if (insertError) return { error: insertError.message };
+      await fetchAll();
+    }
+    return {};
+  };
+
   const addPointEvent = async (kidId: string, points: number, reason: string) => {
     if (!family?.id || !user?.id) return { error: 'Not authenticated' };
     if (points === 0) return { error: 'Points cannot be zero' };
@@ -178,6 +210,7 @@ export const RewardsProvider = ({ children }: { children: ReactNode }) => {
         deleteReward,
         redeemReward,
         addPointEvent,
+        resetKidPoints,
         refreshRewards: fetchAll,
       }}
     >

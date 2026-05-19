@@ -5,6 +5,7 @@ export interface Reward {
   title: string;
   description: string | null;
   icon: string;
+  image_url: string | null;
   points_cost: number;
   is_active: boolean;
   created_at: string;
