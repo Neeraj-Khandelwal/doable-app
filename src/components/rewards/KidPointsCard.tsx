@@ -19,7 +19,7 @@ interface KidPointsCardProps {
   onReset?: () => void;
 }
 
-export default function KidPointsCard({ kid, balance, earned, spent, onGivePoints, onReset }: KidPointsCardProps) {
+export default function KidPointsCard({ kid, balance, earned, spent, rank, onGivePoints, onReset }: KidPointsCardProps) {
   const colors = KID_COLOR_MAP[kid.color] ?? KID_COLOR_MAP.lavender;
 
   return (
@@ -27,30 +27,37 @@ export default function KidPointsCard({ kid, balance, earned, spent, onGivePoint
       className="rounded-2xl p-4 flex flex-col gap-2 relative overflow-hidden"
       style={{ backgroundColor: colors.bg, border: `2px solid ${colors.ring}` }}
     >
-      {/* Give points button (owner only) */}
-      {onGivePoints && (
-        <button
-          onClick={onGivePoints}
-          className="absolute bottom-3 right-3 w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-base shadow-sm transition-opacity hover:opacity-80"
-          style={{ backgroundColor: colors.hex }}
-          aria-label={`Give points to ${kid.name}`}
-        >
-          ±
-        </button>
+      {/* Rank badge */}
+      {rank !== undefined && rank <= 3 && (
+        <div className="absolute top-3 right-3 text-lg">
+          {rank === 1 ? '🥇' : rank === 2 ? '🥈' : '🥉'}
+        </div>
       )}
 
-      {/* Reset points button (owner only) */}
-      {onReset && (
-        <button
-          onClick={onReset}
-          className="absolute top-3 right-3 w-6 h-6 rounded-full flex items-center justify-center text-xs transition-opacity hover:opacity-80"
-          style={{ backgroundColor: colors.ring, color: '#fff' }}
-          aria-label={`Reset ${kid.name}'s points`}
-          title="Reset points"
-        >
-          ↺
-        </button>
-      )}
+      {/* Action buttons (owner only) */}
+      <div className="absolute bottom-3 right-3 flex gap-1.5">
+        {onReset && (
+          <button
+            onClick={onReset}
+            className="w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-sm transition-opacity hover:opacity-80"
+            style={{ backgroundColor: '#aaa' }}
+            aria-label={`Reset points for ${kid.name}`}
+            title="Reset points"
+          >
+            ↺
+          </button>
+        )}
+        {onGivePoints && (
+          <button
+            onClick={onGivePoints}
+            className="w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-base shadow-sm transition-opacity hover:opacity-80"
+            style={{ backgroundColor: colors.hex }}
+            aria-label={`Give points to ${kid.name}`}
+          >
+            ±
+          </button>
+        )}
+      </div>
 
       {/* Avatar + name */}
       <div className="flex items-center gap-2">

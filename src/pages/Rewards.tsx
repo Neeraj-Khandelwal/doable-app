@@ -74,7 +74,7 @@ const KID_COLOR_MAP: Record<string, string> = {
 
 export default function Rewards() {
   const { user } = useAuthContext();
-  const { rewards, redemptions, kidPointEvents, loading, error, createReward, updateReward, deleteReward, redeemReward, addPointEvent } =
+  const { rewards, redemptions, kidPointEvents, loading, error, createReward, updateReward, deleteReward, redeemReward, addPointEvent, resetKidPoints } =
     useRewardsContext();
   const { tasks } = useTaskContext();
   const { kidProfiles, isOwner, ratingConfig, updateRatingConfig } = useFamilyContext();
@@ -86,8 +86,10 @@ export default function Rewards() {
   const [ratingConfigOpen, setRatingConfigOpen] = useState(false);
   const [givePointsKidId, setGivePointsKidId] = useState<string | undefined>();
   const [givePointsOpen, setGivePointsOpen] = useState(false);
-  const [confirmResetKidId, setConfirmResetKidId] = useState<string | null>(null);
-  const [resetting, setResetting] = useState(false);
+  const [resetKidId, setResetKidId] = useState<string | undefined>();
+  const [resetModalOpen, setResetModalOpen] = useState(false);
+  const [resetResetting, setResetResetting] = useState(false);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   const pointsEarned = useMemo(() => {
     const earned: Record<string, number> = {};
@@ -179,13 +181,13 @@ export default function Rewards() {
     if (result?.error) throw new Error(result.error);
   };
 
-  const handleResetPoints = async (kidId: string) => {
-    const balance = getBalance(kidId);
-    if (balance === 0) { setConfirmResetKidId(null); return; }
-    setResetting(true);
-    await addPointEvent(kidId, -balance, 'Points reset');
-    setResetting(false);
-    setConfirmResetKidId(null);
+  const handleResetConfirm = async (includeHistory: boolean) => {
+    if (!resetKidId) return;
+    setResetResetting(true);
+    await resetKidPoints(resetKidId, includeHistory, getBalance(resetKidId));
+    setResetResetting(false);
+    setResetModalOpen(false);
+    setResetKidId(undefined);
   };
 
   const recentRedemptions = redemptions.slice(0, 5);
@@ -196,8 +198,69 @@ export default function Rewards() {
     { key: 'history', label: '📜 History' },
   ];
 
+  const resetKid = kidProfiles.find((k) => k.id === resetKidId);
+
   return (
     <div className="space-y-4 pb-4">
+
+      {/* Global image lightbox */}
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <button
+            onClick={() => setLightboxUrl(null)}
+            className="absolute top-4 right-4 text-white text-3xl font-bold leading-none hover:opacity-80"
+          >
+            ×
+          </button>
+          <img
+            src={lightboxUrl}
+            alt="Reward"
+            className="max-w-full max-h-full object-contain rounded-xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+
+      {/* Reset points modal */}
+      {resetModalOpen && resetKid && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
+            <h2 className="text-lg font-bold text-gray-900">Reset points for {resetKid.name}</h2>
+            <p className="text-sm text-gray-500">
+              Current balance: <strong>{getBalance(resetKid.id)} pts</strong>
+            </p>
+            <p className="text-sm text-gray-600">What do you want to reset?</p>
+            <div className="space-y-2">
+              <button
+                disabled={resetResetting}
+                onClick={() => void handleResetConfirm(false)}
+                className="w-full py-3 rounded-xl border-2 border-amber text-amber font-semibold text-sm hover:bg-amber/10 transition-colors disabled:opacity-50"
+              >
+                Reset balance to 0
+                <p className="text-xs font-normal text-gray-400 mt-0.5">Adds a correction entry — history stays visible</p>
+              </button>
+              <button
+                disabled={resetResetting}
+                onClick={() => void handleResetConfirm(true)}
+                className="w-full py-3 rounded-xl border-2 border-rose text-rose font-semibold text-sm hover:bg-rose/10 transition-colors disabled:opacity-50"
+              >
+                Reset balance + clear all history
+                <p className="text-xs font-normal text-gray-400 mt-0.5">Deletes all point events and redemptions</p>
+              </button>
+            </div>
+            <button
+              onClick={() => { setResetModalOpen(false); setResetKidId(undefined); }}
+              className="w-full py-2 text-sm text-gray-500 hover:text-gray-700"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -246,32 +309,20 @@ export default function Rewards() {
                   Add kids in the Family tab to track their points
                 </div>
               ) : (
-                <>
-                  <div className="grid grid-cols-2 gap-3">
-                    {sortedKids.map((kid) => (
-                      <KidPointsCard
-                        key={kid.id}
-                        kid={kid}
-                        balance={getBalance(kid.id)}
-                        earned={pointsEarned[kid.id] ?? 0}
-                        spent={pointsSpent[kid.id] ?? 0}
-                        onGivePoints={isOwner ? () => { setGivePointsKidId(kid.id); setGivePointsOpen(true); } : undefined}
-                        onReset={isOwner ? () => setConfirmResetKidId(kid.id) : undefined}
-                      />
-                    ))}
-                  </div>
-
-                  {/* Inline reset confirmation */}
-                  {confirmResetKidId && (
-                    <ResetConfirmPanel
-                      kid={kidProfiles.find((k) => k.id === confirmResetKidId) ?? null}
-                      balance={getBalance(confirmResetKidId)}
-                      resetting={resetting}
-                      onConfirm={() => void handleResetPoints(confirmResetKidId)}
-                      onCancel={() => setConfirmResetKidId(null)}
+                <div className="grid grid-cols-2 gap-3">
+                  {sortedKids.map((kid, idx) => (
+                    <KidPointsCard
+                      key={kid.id}
+                      kid={kid}
+                      balance={getBalance(kid.id)}
+                      earned={pointsEarned[kid.id] ?? 0}
+                      spent={pointsSpent[kid.id] ?? 0}
+                      rank={idx + 1}
+                      onGivePoints={isOwner ? () => { setGivePointsKidId(kid.id); setGivePointsOpen(true); } : undefined}
+                      onReset={isOwner ? () => { setResetKidId(kid.id); setResetModalOpen(true); } : undefined}
                     />
-                  )}
-                </>
+                  ))}
+                </div>
               )}
 
 
@@ -309,12 +360,26 @@ export default function Rewards() {
                       const kid = kidProfiles.find((k) => k.id === r.kid_id);
                       const reward = rewards.find((rw) => rw.id === r.reward_id);
                       const date = new Date(r.redeemed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                      return (
+                      const hasImage = !!reward?.image_url;
+                  return (
                         <div key={r.id} className="flex items-center gap-3 py-2 px-3 bg-bg-deep rounded-xl">
-                          <span className="text-lg">{reward?.icon ?? '🎁'}</span>
+                          <button
+                            className={`flex-shrink-0 w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center ${hasImage ? 'cursor-pointer' : 'cursor-default'}`}
+                            onClick={hasImage ? () => setLightboxUrl(reward!.image_url!) : undefined}
+                            aria-label={hasImage ? 'View full image' : undefined}
+                          >
+                            {hasImage ? (
+                              <img src={reward!.image_url!} alt={reward!.title} className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-lg">{reward?.icon ?? '🎁'}</span>
+                            )}
+                          </button>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-ink truncate">{reward?.title ?? 'Reward'}</p>
-                            <p className="text-xs text-ink-4">{kid?.name ?? 'Kid'} · {date}</p>
+                            <p className="text-xs text-ink-4">
+                              {kid?.name ?? 'Kid'} · {date}
+                              {hasImage && <span className="ml-1 text-lavender">· tap image to expand</span>}
+                            </p>
                           </div>
                           <span className="text-xs font-bold text-rose">−{r.points_spent} pts</span>
                         </div>
