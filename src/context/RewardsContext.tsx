@@ -15,7 +15,7 @@ type RewardsContextValue = {
   updateReward: (id: string, updates: Partial<Reward>) => Promise<{ data?: Reward; error?: string }>;
   deleteReward: (id: string) => Promise<{ error?: string }>;
   redeemReward: (rewardId: string, kidId: string, currentBalance: number) => Promise<{ error?: string }>;
-  addPointEvent: (kidId: string, points: number, reason: string) => Promise<{ error?: string }>;
+  addPointEvent: (kidId: string, points: number, reason: string, photoUrl?: string | null) => Promise<{ error?: string }>;
   resetKidPoints: (kidId: string, includeHistory: boolean, currentBalance: number) => Promise<{ error?: string }>;
   refreshRewards: () => Promise<void>;
 };

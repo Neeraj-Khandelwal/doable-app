@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useAuthContext } from '../context/AuthContext';
 import { useRewardsContext } from '../context/RewardsContext';
 import { useTaskContext } from '../context/TaskContext';
 import { useFamilyContext } from '../context/FamilyContext';
@@ -32,6 +33,7 @@ const KID_COLOR_MAP: Record<string, string> = {
 };
 
 export default function Rewards() {
+  const { user } = useAuthContext();
   const { rewards, redemptions, kidPointEvents, loading, error, createReward, updateReward, deleteReward, redeemReward, addPointEvent, resetKidPoints } =
     useRewardsContext();
   const { tasks } = useTaskContext();
@@ -436,6 +438,7 @@ export default function Rewards() {
         onClose={() => setGivePointsOpen(false)}
         kids={kidProfiles}
         defaultKidId={givePointsKidId}
+        userId={user?.id ?? ''}
         onSave={addPointEvent}
       />
     </div>

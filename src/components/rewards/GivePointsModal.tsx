@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { KidProfile } from '../../utils/familyModels';
+import { pickPhoto, uploadMomentPhoto } from '../../services/photoService';
 
 const KID_COLOR_MAP: Record<string, string> = {
   lavender: '#7C6FF0',
@@ -15,28 +16,46 @@ interface GivePointsModalProps {
   onClose: () => void;
   kids: KidProfile[];
   defaultKidId?: string;
-  onSave: (kidId: string, points: number, reason: string) => Promise<{ error?: string }>;
+  userId: string;
+  onSave: (kidId: string, points: number, reason: string, photoUrl?: string | null) => Promise<{ error?: string }>;
 }
 
-export default function GivePointsModal({ isOpen, onClose, kids, defaultKidId, onSave }: GivePointsModalProps) {
+export default function GivePointsModal({ isOpen, onClose, kids, defaultKidId, userId, onSave }: GivePointsModalProps) {
   const [selectedKidId, setSelectedKidId] = useState(defaultKidId ?? kids[0]?.id ?? '');
   const [mode, setMode] = useState<'+' | '-'>('+');
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
+  const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
+  const [photoBlob, setPhotoBlob] = useState<Blob | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
+  // Track previous open state so we only reset on open transition (false→true),
+  // not when `kids` gets a new array reference (which happens on page refocus
+  // after the camera/gallery picker closes, and would otherwise wipe the form).
+  const wasOpenRef = useRef(false);
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !wasOpenRef.current) {
       setSelectedKidId(defaultKidId ?? kids[0]?.id ?? '');
       setMode('+');
       setAmount('');
       setReason('');
+      setPhotoDataUrl(null);
+      setPhotoBlob(null);
       setError('');
+      setSaving(false);
     }
-  }, [isOpen, defaultKidId, kids]);
+    wasOpenRef.current = isOpen;
+  });
 
   if (!isOpen) return null;
+
+  const handlePickPhoto = async (source: 'camera' | 'gallery') => {
+    const result = await pickPhoto(source);
+    if (!result) return;
+    setPhotoDataUrl(result.dataUrl);
+    setPhotoBlob(result.blob);
+  };
 
   const handleSave = async () => {
     const pts = parseInt(amount);
@@ -46,7 +65,15 @@ export default function GivePointsModal({ isOpen, onClose, kids, defaultKidId, o
 
     setSaving(true);
     setError('');
-    const result = await onSave(selectedKidId, mode === '+' ? pts : -pts, reason.trim());
+
+    let photoUrl: string | null = null;
+    if (photoBlob) {
+      const { url, error: uploadError } = await uploadMomentPhoto(userId, photoBlob);
+      if (uploadError) { setError(`Photo upload failed: ${uploadError}`); setSaving(false); return; }
+      photoUrl = url ?? null;
+    }
+
+    const result = await onSave(selectedKidId, mode === '+' ? pts : -pts, reason.trim(), photoUrl);
     if (result.error) {
       setError(result.error);
       setSaving(false);
@@ -188,6 +215,46 @@ export default function GivePointsModal({ isOpen, onClose, kids, defaultKidId, o
             />
           </div>
 
+          {/* Photo capture — only in Award mode */}
+          {mode === '+' && (
+            <div className="mb-4">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                📷 Capture the moment <span className="font-normal text-gray-400">(optional)</span>
+              </label>
+
+              {photoDataUrl ? (
+                <div className="relative">
+                  <img
+                    src={photoDataUrl}
+                    alt="Moment"
+                    className="w-full h-44 object-cover rounded-xl border border-gray-200"
+                  />
+                  <button
+                    onClick={() => { setPhotoDataUrl(null); setPhotoBlob(null); }}
+                    className="absolute top-2 right-2 w-7 h-7 bg-black/60 text-white rounded-full flex items-center justify-center text-sm font-bold hover:bg-black/80"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => void handlePickPhoto('camera')}
+                    className="flex-1 py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm font-semibold text-gray-500 hover:border-lavender hover:text-lavender transition-colors"
+                  >
+                    📸 Camera
+                  </button>
+                  <button
+                    onClick={() => void handlePickPhoto('gallery')}
+                    className="flex-1 py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm font-semibold text-gray-500 hover:border-lavender hover:text-lavender transition-colors"
+                  >
+                    🖼️ Gallery
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Preview */}
           {amount && parseInt(amount) > 0 && selectedKid && (
             <div
@@ -196,6 +263,7 @@ export default function GivePointsModal({ isOpen, onClose, kids, defaultKidId, o
             >
               {mode === '+' ? '+' : '−'}{amount} pts → {selectedKid.name}
               {reason ? ` · "${reason}"` : ''}
+              {photoDataUrl ? ' · 📷' : ''}
             </div>
           )}
         </div>
@@ -208,7 +276,9 @@ export default function GivePointsModal({ isOpen, onClose, kids, defaultKidId, o
             className="w-full py-3 font-bold text-white rounded-xl disabled:opacity-40 transition-opacity"
             style={{ backgroundColor: mode === '+' ? '#2EB87A' : '#E85450' }}
           >
-            {saving ? 'Saving…' : mode === '+' ? `Give ${amount || '?'} pts` : `Deduct ${amount || '?'} pts`}
+            {saving
+              ? (photoBlob ? 'Uploading photo…' : 'Saving…')
+              : mode === '+' ? `Give ${amount || '?'} pts` : `Deduct ${amount || '?'} pts`}
           </button>
         </div>
       </div>
