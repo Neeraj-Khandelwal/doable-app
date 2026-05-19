@@ -279,7 +279,6 @@ export default function Rewards() {
                       earned={pointsEarned[kid.id] ?? 0}
                       spent={pointsSpent[kid.id] ?? 0}
                       rank={idx + 1}
-                      onGivePoints={isOwner ? () => { setGivePointsKidId(kid.id); setGivePointsOpen(true); } : undefined}
                       onReset={isOwner ? () => { setResetKidId(kid.id); setResetModalOpen(true); } : undefined}
                     />
                   ))}
