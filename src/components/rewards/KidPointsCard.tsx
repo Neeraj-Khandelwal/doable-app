@@ -25,14 +25,8 @@ export default function KidPointsCard({ kid, balance, earned, spent, onReset }: 
       className="rounded-2xl p-4 flex flex-col gap-2"
       style={{ backgroundColor: colors.bg, border: `2px solid ${colors.ring}` }}
     >
-      {/* Avatar + name + rank + reset */}
+      {/* Name + reset */}
       <div className="flex items-center gap-2">
-        <div
-          className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
-          style={{ backgroundColor: colors.hex }}
-        >
-          {kid.name.charAt(0).toUpperCase()}
-        </div>
         <span className="font-bold text-gray-900 text-sm flex-1 truncate">{kid.name}</span>
 {onReset && (
           <button
