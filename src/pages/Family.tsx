@@ -4,6 +4,7 @@ import { useFamilyContext } from '../context/FamilyContext';
 import { useAuthContext } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
 import type { FamilyColor } from '../utils/familyModels';
+import { useAppPermissions, type PermStatus } from '../hooks/useAppPermissions';
 
 type Tab = 'family' | 'account';
 
@@ -18,6 +19,47 @@ const COLOR_OPTIONS: { name: FamilyColor; hex: string; ring: string; bg: string 
 
 const colorFor = (name: FamilyColor) => COLOR_OPTIONS.find((c) => c.name === name) ?? COLOR_OPTIONS[0];
 
+const PERM_META: Record<string, { icon: string; label: string; description: string }> = {
+  notifications: { icon: '🔔', label: 'Notifications', description: 'Alarm reminders and family nudges' },
+  microphone:    { icon: '🎙️', label: 'Microphone',    description: 'Voice task input' },
+  camera:        { icon: '📷', label: 'Camera & Photos', description: 'Reward images and habit photos' },
+};
+
+function PermissionRow({ type, status, requesting, onRequest }: {
+  type: string; status: PermStatus; requesting: boolean; onRequest: () => void;
+}) {
+  const meta = PERM_META[type];
+  return (
+    <div className="flex items-center gap-3 py-3 border-b border-line-soft last:border-0">
+      <span className="text-xl flex-shrink-0">{meta.icon}</span>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-ink">{meta.label}</p>
+        <p className="text-xs text-ink-4">{meta.description}</p>
+      </div>
+      {status === 'unsupported' ? (
+        <span className="text-xs text-ink-4">N/A</span>
+      ) : status === 'granted' ? (
+        <span className="text-xs font-semibold text-mint flex items-center gap-1">
+          <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+          </svg>
+          Allowed
+        </span>
+      ) : status === 'denied' ? (
+        <span className="text-xs font-semibold text-rose">Blocked</span>
+      ) : (
+        <button
+          onClick={onRequest}
+          disabled={requesting}
+          className="px-3 py-1.5 bg-lavender text-white text-xs font-bold rounded-full disabled:opacity-40 hover:opacity-90 transition-opacity"
+        >
+          {requesting ? '…' : 'Allow'}
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function Family() {
   const {
     family, familyMembers, kidProfiles, loading, error, isOwner,
@@ -25,6 +67,7 @@ export default function Family() {
     addKidProfile, updateKidProfile, removeKidProfile, updateFamilyMember,
   } = useFamilyContext();
   const { user, signOut } = useAuthContext();
+  const { permissions, requesting, requestPermission } = useAppPermissions();
 
   const location = useLocation();
   const [tab, setTab] = useState<Tab>(
@@ -536,6 +579,25 @@ export default function Family() {
             >
               {profileSaving ? 'Saving…' : 'Save Profile'}
             </button>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-line-soft shadow-sm p-4">
+            <h2 className="text-xs font-bold text-ink-3 uppercase tracking-wider mb-1">App Permissions</h2>
+            <p className="text-xs text-ink-4 mb-2">Grant permissions upfront so features work when you need them.</p>
+            {(Object.keys(PERM_META) as Array<keyof typeof PERM_META>).map((type) => (
+              <PermissionRow
+                key={type}
+                type={type}
+                status={permissions[type as keyof typeof permissions]}
+                requesting={requesting === type}
+                onRequest={() => void requestPermission(type as 'notifications' | 'microphone' | 'camera')}
+              />
+            ))}
+            {(permissions.notifications === 'denied' || permissions.microphone === 'denied' || permissions.camera === 'denied') && (
+              <p className="text-xs text-ink-4 mt-2 leading-relaxed">
+                ⚙️ To unblock, go to browser/device settings → find this site → allow the permission, then refresh.
+              </p>
+            )}
           </div>
 
           <div className="bg-white rounded-2xl border border-line-soft shadow-sm p-4">
