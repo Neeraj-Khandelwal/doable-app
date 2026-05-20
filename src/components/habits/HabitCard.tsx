@@ -1,5 +1,5 @@
 import type { Habit } from '../../utils/habitModels';
-import { CATEGORY_LABELS, CATEGORY_ICONS, FREQUENCY_LABELS, isScheduledToday } from '../../utils/habitModels';
+import { CATEGORY_LABELS, CATEGORY_ICONS, FREQUENCY_LABELS, isScheduledToday, isScheduledForDay } from '../../utils/habitModels';
 import type { KidProfile } from '../../utils/familyModels';
 
 const KID_COLOR_MAP: Record<string, string> = {
@@ -17,9 +17,51 @@ interface HabitCardProps {
   todayCount: number;
   streak: number;
   kids: KidProfile[];
+  completedDates?: Set<string>; // pre-filtered dates for this habit+assignee
   onComplete: () => void;
   onUndo: () => void;
   onEdit: () => void;
+}
+
+const DAY_ABBR = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
+function WeekStrip({ habit, completedDates, accentColor }: {
+  habit: Habit;
+  completedDates: Set<string>;
+  accentColor: string;
+}) {
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i)); // oldest on left, today on right
+    const dateStr = d.toISOString().split('T')[0];
+    const dayOfWeek = d.getDay();
+    const scheduled = isScheduledForDay(habit, dayOfWeek);
+    const completed = completedDates.has(dateStr);
+    const isToday = i === 6;
+    return { dateStr, dayOfWeek, scheduled, completed, isToday };
+  });
+
+  return (
+    <div className="flex gap-1 mt-3 pt-3 border-t border-gray-100 justify-between">
+      {days.map(({ dateStr, dayOfWeek, scheduled, completed, isToday }) => (
+        <div key={dateStr} className="flex flex-col items-center gap-1">
+          <span className={`text-[10px] font-medium ${isToday ? 'text-gray-700' : 'text-gray-400'}`}>
+            {DAY_ABBR[dayOfWeek]}
+          </span>
+          <div
+            className="w-6 h-6 rounded-full flex items-center justify-center"
+            style={{
+              backgroundColor: completed ? accentColor : scheduled ? `${accentColor}20` : 'transparent',
+              border: scheduled ? `1.5px solid ${completed ? accentColor : `${accentColor}40`}` : 'none',
+            }}
+          >
+            {completed && <span className="text-white text-[10px] leading-none">✓</span>}
+            {!completed && !scheduled && <span className="text-gray-200 text-[10px]">–</span>}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function CompletionDots({ count, target, color }: { count: number; target: number; color: string }) {
@@ -41,7 +83,7 @@ function CompletionDots({ count, target, color }: { count: number; target: numbe
   );
 }
 
-export default function HabitCard({ habit, assignee, todayCount, streak, kids, onComplete, onUndo, onEdit }: HabitCardProps) {
+export default function HabitCard({ habit, assignee, todayCount, streak, kids, completedDates, onComplete, onUndo, onEdit }: HabitCardProps) {
   const isCompleted = todayCount >= habit.target_count;
   const scheduled = isScheduledToday(habit);
 
@@ -124,6 +166,11 @@ export default function HabitCard({ habit, assignee, todayCount, streak, kids, o
           )}
         </div>
       </div>
+
+      {/* 7-day strip for daily habits */}
+      {habit.frequency === 'daily' && completedDates && (
+        <WeekStrip habit={habit} completedDates={completedDates} accentColor={accentColor} />
+      )}
     </div>
   );
 }

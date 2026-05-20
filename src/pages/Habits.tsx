@@ -8,7 +8,7 @@ import HabitCard from '../components/habits/HabitCard';
 import HabitModal from '../components/habits/HabitModal';
 
 export default function Habits() {
-  const { habits, loading, error, createHabit, updateHabit, deleteHabit, completeHabit, undoComplete, getTodayCount, getStreak } =
+  const { habits, completions, loading, error, createHabit, updateHabit, deleteHabit, completeHabit, undoComplete, getTodayCount, getStreak } =
     useHabitContext();
   const { kidProfiles } = useFamilyContext();
   const { refreshRewards } = useRewardsContext();
@@ -126,6 +126,11 @@ export default function Habits() {
               todayCount={getTodayCount(habit.id, activeTab)}
               streak={getStreak(habit, activeTab)}
               kids={kidProfiles}
+              completedDates={new Set(
+                completions
+                  .filter((c) => c.habit_id === habit.id && c.completed_by === activeTab)
+                  .map((c) => c.date)
+              )}
               onComplete={async () => {
                 const result = await completeHabit(habit.id, activeTab);
                 if (result.bonusAwarded) {
