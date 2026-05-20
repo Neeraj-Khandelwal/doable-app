@@ -399,7 +399,7 @@ ALTER TABLE alarms              DISABLE ROW LEVEL SECURITY;
 -- ── Policies ─────────────────────────────────────────────────────────────────
 
 -- families
-CREATE POLICY "fam_sel" ON families FOR SELECT USING (owner_id = auth.uid() OR is_family_member(id));
+CREATE POLICY "fam_sel" ON families FOR SELECT USING (auth.uid() IS NOT NULL);
 CREATE POLICY "fam_ins" ON families FOR INSERT WITH CHECK (owner_id = auth.uid());
 CREATE POLICY "fam_upd" ON families FOR UPDATE USING (owner_id = auth.uid());
 CREATE POLICY "fam_del" ON families FOR DELETE USING (owner_id = auth.uid());
