@@ -1,7 +1,7 @@
 # Doable Android App – Claude Code Development Plan
-**Version:** 2.2  
-**Date:** May 17, 2026  
-**Status:** Active Development — Phases 1–20 Complete + Enhancements  
+**Version:** 2.3  
+**Date:** May 20, 2026  
+**Status:** Active Development — Phases 1–20 Complete + Enhancements — Closed Testing  
 **Platform:** Android 10+ (API 29+)  
 **Tech Stack:** React + Tailwind CSS + Supabase + Capacitor + EAS Build  
 
@@ -1866,6 +1866,14 @@ Color scheme: peach, lavender, mint, sky, amber, rose"
 | 11 | 1 Point per Kid Habit Completion | Medium | Enhancement | ✅ Complete |
 | 12 | Bug Fix: Kid task rating modal on Home screen | High | Enhancement | ✅ Complete |
 | 13 | Bug Fix: Me deselectable in task creation | Medium | Enhancement | ✅ Complete |
+| 14 | App Permissions Management in Account tab (Notifications, Mic, Camera) | Medium | Enhancement | ✅ Complete |
+| 15 | Data Reset section in Account tab (Tasks / Habit Progress / Rewards) | Medium | Enhancement | ✅ Complete |
+| 16 | Leaderboard: remove rank medals, avatar initials, ± give-points button | Low | Enhancement | ✅ Complete |
+| 17 | Voice task word duplication fix — iterate from `e.resultIndex` in `onresult` | High | Enhancement | ✅ Complete |
+| 18 | 7-day completion dot strip on daily habit cards (WeekStrip component) | Medium | Enhancement | ✅ Complete |
+| 19 | Reward history photo tap-to-expand lightbox | Low | Enhancement | ✅ Complete |
+| 20 | GivePointsModal photo form reset fix (wasOpenRef pattern) | High | Enhancement | ✅ Complete |
+| 21 | Vercel deployment — `vercel.json` SPA rewrite rule for all routes | Medium | Enhancement | ✅ Complete |
 
 ---
 
@@ -2007,6 +2015,79 @@ Reuses existing `fireImmediateNotification()` from `src/services/notificationSer
 
 ---
 
+# ENHANCEMENT: Permissions, Data Reset, Leaderboard, Voice Fix, Habit Strip, Lightbox, Vercel
+*Completed: May 20, 2026*
+
+## App Permissions Management (Account Tab)
+**New file:** `src/hooks/useAppPermissions.ts`
+- Tracks `PermStatus` (`granted | denied | prompt | unsupported`) for Notifications, Microphone, Camera
+- `refresh()` — checks status on mount via `navigator.permissions.query()` (mic/camera) and `Notification.permission` (notifications)
+- `requestPermission(type)` — calls appropriate browser API: `Notification.requestPermission()`, `navigator.mediaDevices.getUserMedia({ audio: true })`, `getUserMedia({ video: true })`
+- Returns `{ permissions, requesting, requestPermission, refresh }`
+
+**UI in `src/pages/Family.tsx` Account tab:**
+- Added `PermissionRow` component + `PERM_META` config object (label, icon, description per permission)
+- Card shows three rows; each row has: icon, label+description, and a status button
+  - "Allow" (amber, calls requestPermission) → "Allowed ✓" (mint) or "Blocked" (rose, links to settings)
+- Reason: `/profile` route redirects to `/family`, so permissions UI must live in `Family.tsx`
+
+## Data Reset Section (Account Tab)
+**Context changes:**
+- `TaskContext`: added `resetAllTasks()` — `DELETE FROM tasks WHERE family_id = ?`; re-fetches
+- `HabitContext`: added `resetHabitProgress()` — `DELETE FROM habit_completions WHERE family_id = ?`; keeps habit definitions
+- `RewardsContext`: added `resetAllRewardData()` — parallel delete of `kid_point_events`, `reward_redemptions`, `rewards`; re-fetches
+
+**UI in `src/pages/Family.tsx` Account tab:**
+- Three rows: Tasks, Habit Progress, Rewards
+- Inline state machine per row: idle → confirming → resetting → done(2s) → idle
+- `wasOpenRef` pattern prevents false reset-trigger when Account tab re-opens
+
+## Leaderboard UI Simplifications
+**File: `src/components/rewards/KidPointsCard.tsx`** — rewritten:
+- **Removed:** rank medal badge (caused sibling rivalry), avatar initial circle (name alone is sufficient), ± give-points button (redundant — dedicated "Give Bonus Points" section exists), `relative overflow-hidden` positioning that caused button overlap
+- **Reset button** moved from `absolute bottom-3 right-3` to inline within the name row (no overlap possible)
+- Interface simplified: `{ kid, balance, earned, spent, onReset? }`
+- `Rewards.tsx`: removed `rank={idx+1}`, `onGivePoints`, changed `sortedKids.map((kid, idx)` → `sortedKids.map((kid)`
+
+## Voice Task Word Duplication Fix
+**File: `src/pages/Voice/TestVoice.tsx`**
+- Root cause: `onresult` loop started at `i = 0` on every event; `finalText` closure already held previous finals, so re-iterating from 0 re-appended them → "put put put washing machine..."
+- Fix: loop starts at `e.resultIndex` (the index of the first new result in this event)
+- Also added `resultIndex: number` to `ISpeechRecognition.onresult` event type interface
+
+## 7-Day Completion Dot Strip on Daily Habits
+**File: `src/components/habits/HabitCard.tsx`**
+- New `WeekStrip` component — receives `habit`, `completedDates: Set<string>`, `accentColor`
+- Builds array of last 7 days (oldest left, today right):
+  - `scheduled` = `isScheduledForDay(habit, dayOfWeek)`
+  - `completed` = `completedDates.has(dateStr)`
+  - Renders: green filled dot (completed), rose outlined dot (missed scheduled), dash (not scheduled)
+- HabitCard renders WeekStrip only when `habit.frequency === 'daily' && completedDates`
+- `Habits.tsx`: passes `completedDates={new Set(completions.filter(...).map(c => c.date))}` to each HabitCard
+
+## Reward History Photo Lightbox
+**File: `src/pages/Rewards.tsx`**
+- History tab photo thumbnails wrapped in `<button>` with `onClick={() => setLightboxUrl(photoUrl)}`
+- `lightboxUrl` state: when set, renders fixed full-screen overlay (`bg-black/90 z-50`) with `<img>` centered
+- Clicking the overlay (or the ✕ button) clears `lightboxUrl` and closes the lightbox
+
+## GivePointsModal Photo Form Reset Fix
+**File: `src/components/rewards/GivePointsModal.tsx`**
+- Root cause: `useEffect` with `kids` in deps fired when FamilyContext emitted new array reference on mobile focus-return from camera app, resetting form state
+- Fix: `wasOpenRef` pattern — effect runs on every render but only resets fields when `isOpen` transitions `false → true` (checked via `wasOpenRef.current`)
+- Form fields (kid selection, +/−, amount, reason, photo) preserved across camera/gallery round-trips
+
+## Vercel Deployment
+**New file: `vercel.json`**
+```json
+{"rewrites": [{"source": "/(.*)", "destination": "/index.html"}]}
+```
+- Enables SPA routing on Vercel — all URL paths serve `index.html` so React Router handles routing client-side
+- Does not affect Android/Capacitor (loads `index.html` from device directly)
+- Auto-deploys on push to `main` via Vercel GitHub integration
+
+---
+
 ## Summary
 
 This plan covers Phases 1–20 of the Doable app plus post-Phase-14 enhancements. All core MVP phases (1–12), Phase 14 (task assignment), Phases 15–20 (feature expansion), and recent enhancements are complete.
@@ -2017,13 +2098,14 @@ This plan covers Phases 1–20 of the Doable app plus post-Phase-14 enhancements
 - Phase 14: ✅ Task assignment + privacy complete
 - Phases 15–20: ✅ Display name, templates, notifications, subtasks, calendar, voice mark-done
 - Enhancements: ✅ Real-mic voice, photo moments, habit points, bug fixes
+- Enhancements: ✅ App Permissions, Data Reset, Leaderboard polish, Voice fix, 7-day habit strip, Photo lightbox, Vercel deployment
 
 **Remaining Work:**
-- Phase 13: Generate signed AAB → upload to Play Store
+- Phase 13: Generate signed AAB → upload to Play Store (closed testing in progress)
 - Run any pending migrations in Supabase SQL Editor (017, 018, 019 if not yet applied)
 
 ---
 
 **Document Status:** Active Development  
-**Last Updated:** May 17, 2026  
-**Next Step:** Phase 13 — Play Store publication
+**Last Updated:** May 20, 2026  
+**Next Step:** Phase 13 — Play Store closed testing → production release

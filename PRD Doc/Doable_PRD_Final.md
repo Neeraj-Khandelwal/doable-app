@@ -5,10 +5,10 @@
 
 | **Field** | **Value** |
 |-----------|-----------|
-| **Version** | 2.2 — Voice Mic, Photo Moments, Habit Points |
-| **Date** | May 17, 2026 |
-| **Platform** | Android (Google Play Store) |
-| **Status** | Active Development — Phases 1–20 Complete + Enhancements |
+| **Version** | 2.3 — Permissions, Data Reset, Leaderboard Polish, Voice Fix, Habit Strip |
+| **Date** | May 20, 2026 |
+| **Platform** | Android (Google Play Store) + Vercel Web |
+| **Status** | Active Development — Phases 1–20 Complete + Enhancements — Closed Testing |
 | **Author** | Personal Learning Project |
 | **Built with** | React + TypeScript + Vite + Tailwind CSS v4 + Supabase + Capacitor + EAS Build |
 
@@ -146,7 +146,8 @@ Recurring tasks auto-create next occurrence on completion.
 
 - **Header:** "Habits" + count
 - **Tab switcher:** Mine · [Kid1] · [Kid2] · ...
-- **Habit cards:** icon, title, frequency label, 7-day dot calendar (green=done, red=missed, orange=today), streak counter 🔥, target count, complete/undo button
+- **Habit cards:** icon, title, frequency label, streak counter 🔥, target count, complete/undo button
+  - **Daily habits** show a **7-day completion strip** below the card: 7 dot indicators for the last 7 days (oldest left → today right). Green filled = completed; red outlined = missed scheduled day; dash (–) = not scheduled that day. Only rendered for `frequency === 'daily'`.
 - Kid habits: completing opens streak bonus toast if 7-day streak achieved (+5 bonus points)
 - **FAB (+):** opens add habit modal
 - **Habit modal fields:** Title, Icon (emoji picker from 24 preset icons), Description, Frequency (Daily/Weekdays/Weekends/Custom days), Target count per day, Reminder time, Category, Assignees (multi-select)
@@ -197,6 +198,19 @@ Combined page with two sub-tabs: **Family** and **Account**
 - Display name input + "Save" button (upserts to `user_profiles` table)
 - Email display (read-only)
 - Sign Out button
+- **App Permissions card** (owner only):
+  - Rows for Notifications, Microphone, Camera
+  - Each row shows current status: **Granted** (green), **Blocked** (red), or **Allow** button (prompt)
+  - Tapping "Allow" calls the appropriate browser/Capacitor permission request
+  - Status checked via `navigator.permissions.query()` on mount; refreshed after each request
+  - Allows parents to grant all permissions upfront before using voice/camera features
+- **Data Reset card** (owner only):
+  - Three rows: **Tasks**, **Habit Progress**, **Rewards**
+  - Each row has a "Reset" button → expands inline to Confirm / Cancel buttons
+  - On confirm: deletes all matching family records from Supabase, re-fetches context, shows ✓ Done state for 2 seconds
+  - Tasks reset: deletes all `tasks` rows for family
+  - Habit Progress reset: deletes all `habit_completions` rows for family (keeps habit definitions)
+  - Rewards reset: deletes all `kid_point_events`, `reward_redemptions`, and `rewards` rows for family
 - App version footer "Doable v1.0"
 
 ---
@@ -235,8 +249,9 @@ Three tabs: **🏆 Points** · **🎁 Store** · **📜 History**
 **History tab:**
 - Chronological list of all point events (task ratings, streak bonuses, adhoc awards)
 - Each row: icon, reason/title, kid name badge, date, ±points
+- Photo rows show a thumbnail above the event; **tapping the photo opens a full-screen lightbox** (fixed overlay, dark bg, tap anywhere to close)
 
-**Give Points modal:** kid selector, +Award / −Deduct toggle, amount (quick picks + custom), reason (quick picks + custom), optional **photo capture** (camera or gallery, compressed to ≤900px JPEG, uploaded to `moment-photos` Supabase Storage bucket), save button — reusable across sessions. Photos render above the event row in History tab.
+**Give Points modal:** kid selector, +Award / −Deduct toggle, amount (quick picks + custom), reason (quick picks + custom), optional **photo capture** (camera or gallery, compressed to ≤900px JPEG, uploaded to `moment-photos` Supabase Storage bucket), save button — reusable across sessions. Photos render above the event row in History tab. **Form fields (points, reason) are preserved when the camera/gallery app opens and returns** — only resets on fresh modal open (`wasOpenRef` pattern guards against mobile focus-loss re-renders).
 
 ---
 
@@ -257,6 +272,7 @@ Three tabs: **🏆 Points** · **🎁 Store** · **📜 History**
 - Dedicated full-screen mic interface — no navigation away needed
 - Large mic button: **Idle → Listening → Stopped** states
 - Uses Web Speech API with `continuous: true` and `interimResults: true` — keeps listening until user taps stop; captures full sentences, not just first 1–2 words
+- `onresult` handler iterates from `e.resultIndex` (not 0) to prevent already-finalized segments being re-appended — fixes word duplication bug on mobile
 - Live transcript shown as user speaks
 - On stop: parsed preview card shows — Task title, due date, priority
 - **Assignee picker** (defaults to Me, always): Me pill (lavender) + kid pills (each kid's color) + Partner pill (sky) — multi-select, resets to "Me" on each new recording
@@ -571,6 +587,13 @@ Default rewards (configurable):
 | 36 | Kid task completion from Home screen shows rating modal (bug fix) | ✅ Built |
 | 37 | Task creation allows kid-only assignment — Me pill is deselectable (bug fix) | ✅ Built |
 | 38 | App is published on Google Play Store and installable on Android 10+ | ⏳ Phase 13 |
+| 39 | Account tab shows App Permissions card — Notifications, Microphone, Camera with Allow/Allowed/Blocked states | ✅ Built |
+| 40 | Data Reset in Account tab — owner can independently reset Tasks, Habit Progress, or Rewards with inline confirm/cancel flow | ✅ Built |
+| 41 | Daily habit cards show 7-day completion dot strip (green=done, outlined=missed, dash=not scheduled) | ✅ Built |
+| 42 | Reward history photos open in full-screen lightbox on tap | ✅ Built |
+| 43 | Voice task screen captures full sentences without word duplication (resultIndex fix) | ✅ Built |
+| 44 | Give Points modal photo picker does not reset points/reason fields on camera/gallery return | ✅ Built |
+| 45 | App accessible via Vercel web URL with correct SPA routing (all routes serve index.html) | ✅ Built |
 
 ---
 
@@ -600,6 +623,7 @@ Default rewards (configurable):
 | Phase 20 | Voice mark-done — complete_task deep link + findTaskByTitle matcher | ✅ Complete |
 | Enhancement | UX polish — grocery attribution, fasting gamification, rewards reset, display names | ✅ Complete |
 | Enhancement | Real-mic voice screen, photo moments, 1pt/habit, bug fixes | ✅ Complete |
+| Enhancement | App Permissions, Data Reset, Leaderboard polish, Voice fix, 7-day habit strip, Photo lightbox, Vercel deployment | ✅ Complete |
 
 ---
 
@@ -631,7 +655,7 @@ Default rewards (configurable):
 
 | Metric | Target |
 |--------|--------|
-| Feature completion | 37/38 criteria met |
+| Feature completion | 44/45 criteria met |
 | App rating | 4.5+ stars on Play Store |
 | Real-time sync latency | < 3 seconds |
 | Daily active users | 100+ by month 3 |
@@ -646,7 +670,7 @@ Default rewards (configurable):
 |-------|-------|
 | **Prepared by** | Personal Learning Project |
 | **Status** | Phases 1–20 complete + enhancements — Phase 13 (Play Store) next |
-| **Last updated** | May 17, 2026 |
+| **Last updated** | May 20, 2026 |
 | **Next review** | After Phase 13 completion |
 
 ---
