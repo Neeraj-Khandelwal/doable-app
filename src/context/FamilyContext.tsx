@@ -215,11 +215,15 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
       .from('families')
       .select('*')
       .eq('invite_code', inviteCode)
-      .single();
+      .maybeSingle();
 
     if (familyError) {
       console.error('Error finding family by invite code:', familyError);
       return { error: familyError };
+    }
+
+    if (!familyData) {
+      return { error: new Error('Invalid invite code. Please check the code and try again.') };
     }
 
     const fam = familyData as Family;
