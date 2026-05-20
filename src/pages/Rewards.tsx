@@ -399,11 +399,19 @@ export default function Rewards() {
                     <div key={evt.key} className="bg-white rounded-xl border border-line-soft shadow-sm overflow-hidden">
                       {/* Photo (if present) */}
                       {evt.photoUrl && (
-                        <img
-                          src={evt.photoUrl}
-                          alt="Moment"
-                          className="w-full h-40 object-cover"
-                        />
+                        <button
+                          className="w-full relative block"
+                          onClick={() => setLightboxUrl(evt.photoUrl!)}
+                        >
+                          <img
+                            src={evt.photoUrl}
+                            alt="Moment"
+                            className="w-full h-40 object-cover"
+                          />
+                          <span className="absolute bottom-2 right-2 text-xs text-white bg-black/50 px-2 py-0.5 rounded-full">
+                            tap to expand
+                          </span>
+                        </button>
                       )}
                       <div className="flex items-center gap-3 p-3">
                         <div
