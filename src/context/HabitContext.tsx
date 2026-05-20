@@ -17,6 +17,7 @@ type HabitContextValue = {
   getTodayCount: (habitId: string, assignee: string) => number;
   getStreak: (habit: Habit, assignee: string) => number;
   refreshHabits: () => Promise<void>;
+  resetHabitProgress: () => Promise<{ error?: string }>;
 };
 
 const HabitContext = createContext<HabitContextValue | undefined>(undefined);
@@ -233,6 +234,13 @@ export const HabitProvider = ({ children }: { children: ReactNode }) => {
         getTodayCount,
         getStreak,
         refreshHabits: fetchHabits,
+        resetHabitProgress: async () => {
+          if (!family?.id) return { error: 'No family' };
+          const { error: err } = await supabase.from('habit_completions').delete().eq('family_id', family.id);
+          if (err) return { error: err.message };
+          await fetchHabits();
+          return {};
+        },
       }}
     >
       {children}

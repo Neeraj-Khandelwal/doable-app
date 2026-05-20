@@ -18,6 +18,7 @@ type RewardsContextValue = {
   addPointEvent: (kidId: string, points: number, reason: string, photoUrl?: string | null) => Promise<{ error?: string }>;
   resetKidPoints: (kidId: string, includeHistory: boolean, currentBalance: number) => Promise<{ error?: string }>;
   refreshRewards: () => Promise<void>;
+  resetAllRewardData: () => Promise<{ error?: string }>;
 };
 
 const RewardsContext = createContext<RewardsContextValue | undefined>(undefined);
@@ -212,6 +213,19 @@ export const RewardsProvider = ({ children }: { children: ReactNode }) => {
         addPointEvent,
         resetKidPoints,
         refreshRewards: fetchAll,
+        resetAllRewardData: async () => {
+          if (!family?.id) return { error: 'No family' };
+          const [evtRes, redRes, rwdRes] = await Promise.all([
+            supabase.from('kid_point_events').delete().eq('family_id', family.id),
+            supabase.from('reward_redemptions').delete().eq('family_id', family.id),
+            supabase.from('rewards').delete().eq('family_id', family.id),
+          ]);
+          if (evtRes.error) return { error: evtRes.error.message };
+          if (redRes.error) return { error: redRes.error.message };
+          if (rwdRes.error) return { error: rwdRes.error.message };
+          await fetchAll();
+          return {};
+        },
       }}
     >
       {children}

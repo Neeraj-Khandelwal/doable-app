@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useFamilyContext } from '../context/FamilyContext';
 import { useAuthContext } from '../context/AuthContext';
+import { useTaskContext } from '../context/TaskContext';
+import { useHabitContext } from '../context/HabitContext';
+import { useRewardsContext } from '../context/RewardsContext';
 import { supabase } from '../supabaseClient';
 import type { FamilyColor } from '../utils/familyModels';
 import { useAppPermissions, type PermStatus } from '../hooks/useAppPermissions';
@@ -67,7 +70,24 @@ export default function Family() {
     addKidProfile, updateKidProfile, removeKidProfile, updateFamilyMember,
   } = useFamilyContext();
   const { user, signOut } = useAuthContext();
+  const { resetAllTasks } = useTaskContext();
+  const { resetHabitProgress } = useHabitContext();
+  const { resetAllRewardData } = useRewardsContext();
   const { permissions, requesting, requestPermission } = useAppPermissions();
+
+  const [resetConfirm, setResetConfirm] = useState<'tasks' | 'habits' | 'rewards' | null>(null);
+  const [resetting, setResetting] = useState(false);
+  const [resetDone, setResetDone] = useState<string | null>(null);
+
+  const handleReset = async (type: 'tasks' | 'habits' | 'rewards') => {
+    setResetting(true);
+    const fn = type === 'tasks' ? resetAllTasks : type === 'habits' ? resetHabitProgress : resetAllRewardData;
+    await fn();
+    setResetting(false);
+    setResetConfirm(null);
+    setResetDone(type);
+    setTimeout(() => setResetDone(null), 3000);
+  };
 
   const location = useLocation();
   const [tab, setTab] = useState<Tab>(
@@ -598,6 +618,56 @@ export default function Family() {
                 ⚙️ To unblock, go to browser/device settings → find this site → allow the permission, then refresh.
               </p>
             )}
+          </div>
+
+          {/* Data Reset */}
+          <div className="bg-white rounded-2xl border border-line-soft shadow-sm p-4">
+            <h2 className="text-xs font-bold text-ink-3 uppercase tracking-wider mb-1">Data Reset</h2>
+            <p className="text-xs text-ink-4 mb-4">You have full control over your data. These actions are permanent and cannot be undone.</p>
+
+            {(
+              [
+                { type: 'tasks'   as const, icon: '📋', label: 'Reset Tasks',         desc: 'Deletes all tasks for your family' },
+                { type: 'habits'  as const, icon: '🎯', label: 'Reset Habit Progress', desc: 'Clears all completions, streaks stay visible until next sync' },
+                { type: 'rewards' as const, icon: '🎁', label: 'Reset Rewards',        desc: 'Deletes all rewards, points and redemption history' },
+              ]
+            ).map(({ type, icon, label, desc }) => (
+              <div key={type} className="py-3 border-b border-line-soft last:border-0">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl flex-shrink-0">{icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-ink">{label}</p>
+                    <p className="text-xs text-ink-4">{desc}</p>
+                  </div>
+                  {resetDone === type ? (
+                    <span className="text-xs font-semibold text-mint">Done ✓</span>
+                  ) : resetConfirm === type ? (
+                    <div className="flex gap-1.5">
+                      <button
+                        onClick={() => setResetConfirm(null)}
+                        className="px-3 py-1.5 text-xs font-bold rounded-full border border-line text-ink-3"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => void handleReset(type)}
+                        disabled={resetting}
+                        className="px-3 py-1.5 text-xs font-bold rounded-full bg-rose text-white disabled:opacity-50"
+                      >
+                        {resetting ? '…' : 'Confirm'}
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setResetConfirm(type)}
+                      className="px-3 py-1.5 text-xs font-bold rounded-full border-2 border-rose/40 text-rose hover:bg-rose/10 transition-colors"
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
 
           <div className="bg-white rounded-2xl border border-line-soft shadow-sm p-4">

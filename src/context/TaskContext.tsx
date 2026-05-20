@@ -30,6 +30,7 @@ type TaskContextValue = {
   acceptTask: (id: string) => Promise<{ error?: string }>;
   rejectTask: (id: string, reason: string) => Promise<{ error?: string }>;
   refreshTasks: () => Promise<void>;
+  resetAllTasks: () => Promise<{ error?: string }>;
 };
 
 const TaskContext = createContext<TaskContextValue | undefined>(undefined);
@@ -344,6 +345,13 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     acceptTask,
     rejectTask,
     refreshTasks: fetchTasks,
+    resetAllTasks: async () => {
+      if (!family?.id) return { error: 'No family' };
+      const { error: err } = await supabase.from('tasks').delete().eq('family_id', family.id);
+      if (err) return { error: err.message };
+      await fetchTasks();
+      return {};
+    },
   };
 
   return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;
