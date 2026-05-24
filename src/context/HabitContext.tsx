@@ -90,7 +90,7 @@ export const HabitProvider = ({ children }: { children: ReactNode }) => {
     return computeStreak(completions, assignee, habit);
   };
 
-  const completeHabit = async (habitId: string, assignee: string): Promise<{ error?: string; bonusAwarded?: boolean }> => {
+  const completeHabit = async (habitId: string, assignee: string): Promise<{ error?: string; bonusAwarded?: boolean; streakMilestone?: number; bonusPoints?: number }> => {
     if (!family?.id) return { error: 'No family' };
     const today = todayStr();
 
