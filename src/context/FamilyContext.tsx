@@ -121,9 +121,28 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
           const kids = await fetchKidProfiles(ownedFamily.id);
           setKidProfiles(kids);
         } else {
-          setFamily(null);
-          setFamilyMembers([]);
-          setKidProfiles([]);
+          // Auto-create a personal family so the app works immediately after signup
+          const invite_code = generateInviteCodeValue();
+          const { data: newFamily, error: createError } = await supabase
+            .from('families')
+            .insert([{ name: 'My Home', owner_id: user.id, invite_code }])
+            .select()
+            .single();
+
+          if (!createError && newFamily) {
+            const fam = newFamily as Family;
+            await supabase
+              .from('family_members')
+              .insert([{ user_id: user.id, family_id: fam.id, role: 'owner' }]);
+            const members = await fetchFamilyMembers(fam.id);
+            setFamily(fam);
+            setFamilyMembers(members);
+            setKidProfiles([]);
+          } else {
+            setFamily(null);
+            setFamilyMembers([]);
+            setKidProfiles([]);
+          }
         }
       }
     } catch (err) {

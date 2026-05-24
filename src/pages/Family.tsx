@@ -66,7 +66,7 @@ function PermissionRow({ type, status, requesting, onRequest }: {
 export default function Family() {
   const {
     family, familyMembers, kidProfiles, loading, error, isOwner,
-    createFamily, joinFamily, generateInviteCode,
+    createFamily, joinFamily, generateInviteCode, updateFamily,
     addKidProfile, updateKidProfile, removeKidProfile, updateFamilyMember,
   } = useFamilyContext();
   const { user, signOut } = useAuthContext();
@@ -116,6 +116,9 @@ export default function Family() {
 
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [editMemberName, setEditMemberName] = useState('');
+
+  const [editingFamilyName, setEditingFamilyName] = useState(false);
+  const [familyNameDraft, setFamilyNameDraft] = useState('');
 
   useEffect(() => {
     if (!user?.id) return;
@@ -239,6 +242,14 @@ export default function Family() {
     setProfileSaving(false);
   };
 
+  const handleSaveFamilyName = async () => {
+    const trimmed = familyNameDraft.trim();
+    if (!trimmed) return;
+    const result = await updateFamily({ name: trimmed });
+    if (result.error) showToast('Could not update name.', 'error');
+    else { showToast('Name updated!'); setEditingFamilyName(false); }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center py-12">
@@ -261,10 +272,35 @@ export default function Family() {
       )}
 
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-extrabold text-ink">
-          {family ? family.name : 'Family'}
-        </h1>
+      <div className="flex items-center gap-2">
+        {editingFamilyName ? (
+          <div className="flex items-center gap-2 flex-1">
+            <input
+              autoFocus
+              value={familyNameDraft}
+              onChange={(e) => setFamilyNameDraft(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') void handleSaveFamilyName(); if (e.key === 'Escape') setEditingFamilyName(false); }}
+              className="text-2xl font-extrabold text-ink bg-transparent border-b-2 border-lavender outline-none flex-1 min-w-0"
+            />
+            <button onClick={() => void handleSaveFamilyName()} className="text-xs font-bold text-white bg-lavender px-3 py-1 rounded-xl">Save</button>
+            <button onClick={() => setEditingFamilyName(false)} className="text-xs font-bold text-ink-3">Cancel</button>
+          </div>
+        ) : (
+          <>
+            <h1 className="text-2xl font-extrabold text-ink">{family ? family.name : 'Family'}</h1>
+            {family && isOwner && (
+              <button
+                onClick={() => { setFamilyNameDraft(family.name); setEditingFamilyName(true); }}
+                className="text-ink-3 hover:text-ink transition-colors"
+                aria-label="Edit family name"
+              >
+                <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                  <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                </svg>
+              </button>
+            )}
+          </>
+        )}
       </div>
 
       {/* Tab bar */}
