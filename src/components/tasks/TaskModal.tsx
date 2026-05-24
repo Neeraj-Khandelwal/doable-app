@@ -51,6 +51,7 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task, kid
   const [priority, setPriority] = useState<TaskPriority>('medium');
   const [category, setCategory] = useState<TaskCategory>('other');
   const [recurrence, setRecurrence] = useState<TaskRecurrence>('none');
+  const [customDays, setCustomDays] = useState<string>('2');
   const [reminderTime, setReminderTime] = useState('');
   const [reminderType, setReminderType] = useState<ReminderType | ''>('');
   const [nudgeInterval, setNudgeInterval] = useState<NudgeInterval | ''>('');
@@ -82,6 +83,7 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task, kid
       setPriority(task.priority);
       setCategory(task.category);
       setRecurrence(task.recurrence);
+      setCustomDays(task.custom_recurrence_days ? String(task.custom_recurrence_days) : '2');
       setReminderTime(task.reminder_time ?? '');
       setReminderType(task.reminder_type ?? '');
       setNudgeInterval(task.nudge_interval ?? '');
@@ -169,6 +171,7 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task, kid
         priority,
         category,
         recurrence,
+        custom_recurrence_days: recurrence === 'custom' ? (parseInt(customDays, 10) || null) : null,
         reminder_time: reminderTime || null,
         reminder_type: (reminderType as ReminderType) || null,
         nudge_interval: (nudgeInterval as NudgeInterval) || null,
@@ -456,21 +459,42 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task, kid
           {/* Recurrence */}
           <div className="mb-4">
             <label className="block text-sm font-semibold text-gray-700 mb-2">Repeat</label>
-            <div className="flex gap-2">
-              {(['none', 'daily', 'weekly', 'monthly'] as TaskRecurrence[]).map((r) => (
+            <div className="flex flex-wrap gap-2">
+              {([
+                { key: 'none', label: 'None' },
+                { key: 'daily', label: 'Daily' },
+                { key: 'weekly', label: 'Weekly' },
+                { key: 'fortnightly', label: 'Fortnightly' },
+                { key: 'monthly', label: 'Monthly' },
+                { key: 'custom', label: 'Custom' },
+              ] as { key: TaskRecurrence; label: string }[]).map(({ key, label }) => (
                 <button
-                  key={r}
-                  onClick={() => setRecurrence(r)}
-                  className={`flex-1 py-2 text-xs font-semibold rounded-lg border-2 capitalize transition-colors ${
-                    recurrence === r
+                  key={key}
+                  onClick={() => setRecurrence(key)}
+                  className={`px-3 py-2 text-xs font-semibold rounded-lg border-2 transition-colors ${
+                    recurrence === key
                       ? 'border-sky bg-sky/10 text-sky'
                       : 'border-gray-100 text-gray-400 bg-white'
                   }`}
                 >
-                  {r}
+                  {label}
                 </button>
               ))}
             </div>
+            {recurrence === 'custom' && (
+              <div className="flex items-center gap-2 mt-3">
+                <span className="text-sm text-gray-600 font-medium">Every</span>
+                <input
+                  type="number"
+                  min="2"
+                  max="365"
+                  value={customDays}
+                  onChange={(e) => setCustomDays(e.target.value)}
+                  className="w-20 px-3 py-2 border border-gray-200 rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-sky bg-gray-50"
+                />
+                <span className="text-sm text-gray-600 font-medium">days</span>
+              </div>
+            )}
           </div>
 
           {/* Reminder */}

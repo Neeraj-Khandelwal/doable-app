@@ -214,6 +214,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       priority: data.priority ?? 'medium',
       category: data.category ?? 'other',
       recurrence: data.recurrence ?? 'none',
+      custom_recurrence_days: data.recurrence === 'custom' ? (data.custom_recurrence_days ?? null) : null,
       ratings: [],
       assigned_to_user_id: assignedToUserId,
       assignment_status: assignedToUserId && assignedToUserId !== user.id ? 'pending_acceptance' : 'accepted',
@@ -274,7 +275,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       // Handle recurrence: create next occurrence
       const task = tasks.find((t) => t.id === id);
       if (task?.recurrence !== 'none' && task?.due_date) {
-        const nextDue = getNextDueDate(task.due_date, task.recurrence);
+        const nextDue = getNextDueDate(task.due_date, task.recurrence, task.custom_recurrence_days);
         if (nextDue) {
           await createTask({
             ...task,
@@ -307,7 +308,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       if (result.error) return result;
       const task = tasks.find((t) => t.id === id);
       if (task?.recurrence !== 'none' && task?.due_date) {
-        const nextDue = getNextDueDate(task.due_date, task.recurrence);
+        const nextDue = getNextDueDate(task.due_date, task.recurrence, task.custom_recurrence_days);
         if (nextDue) {
           await createTask({ ...task, due_date: nextDue, completed_by: null, completed_at: null, ratings: [] });
         }

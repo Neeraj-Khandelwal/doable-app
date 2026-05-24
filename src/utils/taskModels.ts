@@ -1,7 +1,7 @@
 export type TaskPriority = 'high' | 'medium' | 'low';
 export type AssignmentStatus = 'pending_acceptance' | 'accepted' | 'rejected';
 export type TaskCategory = 'home' | 'work' | 'health' | 'shopping' | 'kids' | 'school' | 'finance' | 'other';
-export type TaskRecurrence = 'none' | 'daily' | 'weekly' | 'monthly';
+export type TaskRecurrence = 'none' | 'daily' | 'weekly' | 'fortnightly' | 'monthly' | 'custom';
 export type ReminderType = 'notification' | 'alarm' | 'nudge';
 export type NudgeInterval = 5 | 10 | 15 | 30 | 60;
 export type RatingType = string; // extensible — custom ratings stored per family
@@ -50,6 +50,7 @@ export interface Task {
   rejection_reason: string | null;
   responded_at: string | null;
   is_private: boolean;
+  custom_recurrence_days: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -144,6 +145,7 @@ export function createTask(data: Partial<Task>): Task {
     rejection_reason: data.rejection_reason ?? null,
     responded_at: data.responded_at ?? null,
     is_private: data.is_private ?? false,
+    custom_recurrence_days: data.custom_recurrence_days ?? null,
     created_at: data.created_at ?? now,
     updated_at: data.updated_at ?? now,
   };
@@ -163,11 +165,14 @@ export function isKidTask(task: Task): boolean {
   return task.assignees.some((a) => a !== 'me');
 }
 
-export function getNextDueDate(dueDate: string, recurrence: TaskRecurrence): string | null {
+export function getNextDueDate(dueDate: string, recurrence: TaskRecurrence, customDays?: number | null): string | null {
   if (recurrence === 'none') return null;
   const d = new Date(dueDate);
   if (recurrence === 'daily') d.setDate(d.getDate() + 1);
   else if (recurrence === 'weekly') d.setDate(d.getDate() + 7);
+  else if (recurrence === 'fortnightly') d.setDate(d.getDate() + 14);
   else if (recurrence === 'monthly') d.setMonth(d.getMonth() + 1);
+  else if (recurrence === 'custom' && customDays && customDays > 0) d.setDate(d.getDate() + customDays);
+  else return null;
   return d.toISOString().split('T')[0];
 }
