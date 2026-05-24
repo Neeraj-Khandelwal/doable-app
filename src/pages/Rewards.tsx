@@ -11,8 +11,7 @@ import GivePointsModal from '../components/rewards/GivePointsModal';
 import KidPointsCard from '../components/rewards/KidPointsCard';
 import RewardCard from '../components/rewards/RewardCard';
 import RewardModal from '../components/rewards/RewardModal';
-import RatingConfigModal from '../components/tasks/RatingConfigModal';
-import HabitPointsConfigModal from '../components/rewards/HabitPointsConfigModal';
+import RewardsSettingsModal from '../components/rewards/RewardsSettingsModal';
 
 type Tab = 'leaderboard' | 'store' | 'history';
 
@@ -47,8 +46,7 @@ export default function Rewards() {
   const [tab, setTab] = useState<Tab>('leaderboard');
   const [rewardModalOpen, setRewardModalOpen] = useState(false);
   const [editingReward, setEditingReward] = useState<Reward | null>(null);
-  const [ratingConfigOpen, setRatingConfigOpen] = useState(false);
-  const [habitPointsConfigOpen, setHabitPointsConfigOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [givePointsKidId, setGivePointsKidId] = useState<string | undefined>();
   const [givePointsOpen, setGivePointsOpen] = useState(false);
   const [resetKidId, setResetKidId] = useState<string | undefined>();
@@ -248,20 +246,12 @@ export default function Rewards() {
           <h1 className="text-2xl font-extrabold text-ink">Rewards</h1>
         </div>
         {isOwner && (
-          <div className="flex gap-2">
-            <button
-              onClick={() => setHabitPointsConfigOpen(true)}
-              className="text-xs font-semibold text-amber bg-amber/10 px-3 py-1.5 rounded-full hover:opacity-80 transition-opacity"
-            >
-              ⚙️ Habits
-            </button>
-            <button
-              onClick={() => setRatingConfigOpen(true)}
-              className="text-xs font-semibold text-lavender bg-plum-soft px-3 py-1.5 rounded-full hover:opacity-80 transition-opacity"
-            >
-              ⚙️ Ratings
-            </button>
-          </div>
+          <button
+            onClick={() => setSettingsOpen(true)}
+            className="text-xs font-semibold text-lavender bg-plum-soft px-3 py-1.5 rounded-full hover:opacity-80 transition-opacity"
+          >
+            ⚙️ Settings
+          </button>
         )}
       </div>
 
@@ -505,13 +495,6 @@ export default function Rewards() {
         reward={editingReward}
       />
 
-      <RatingConfigModal
-        isOpen={ratingConfigOpen}
-        onClose={() => setRatingConfigOpen(false)}
-        currentOptions={ratingConfig}
-        onSave={async (opts) => { await updateRatingConfig(opts); }}
-      />
-
       <GivePointsModal
         isOpen={givePointsOpen}
         onClose={() => setGivePointsOpen(false)}
@@ -521,11 +504,13 @@ export default function Rewards() {
         onSave={addPointEvent}
       />
 
-      <HabitPointsConfigModal
-        isOpen={habitPointsConfigOpen}
-        onClose={() => setHabitPointsConfigOpen(false)}
-        current={habitPointsConfig}
-        onSave={async (cfg) => { await updateHabitPointsConfig(cfg); }}
+      <RewardsSettingsModal
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        habitConfig={habitPointsConfig}
+        onSaveHabitConfig={async (cfg) => { await updateHabitPointsConfig(cfg); }}
+        ratingOptions={ratingConfig}
+        onSaveRatingOptions={async (opts) => { await updateRatingConfig(opts); }}
       />
     </div>
   );
