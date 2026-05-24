@@ -299,15 +299,27 @@ export default function Tasks() {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-lavender" />
         </div>
       ) : activeTasks.length === 0 && doneTasks.length === 0 ? (
-        <div className="text-center py-16">
+        <div className="flex flex-col items-center text-center py-16 px-6">
           <div className="text-5xl mb-4">📋</div>
-          <p className="text-ink-3 font-medium">
-            {filter === 'done' ? 'No completed tasks' :
+          <p className="font-bold text-ink mb-1">
+            {filter === 'done' ? 'No completed tasks yet' :
              filter === 'high' ? 'No high priority tasks' :
              assigneeFilter !== 'all' ? 'No tasks for this person' :
              'No tasks yet'}
           </p>
-          <p className="text-sm text-ink-4 mt-1">Tap + to add your first task</p>
+          <p className="text-sm text-ink-4 mb-5">
+            {filter === 'all' && assigneeFilter === 'all'
+              ? 'Tap + to add your first task. Set a due date, priority, or assign it to a family member.'
+              : 'Try switching the filter above to see all tasks.'}
+          </p>
+          {filter === 'all' && assigneeFilter === 'all' && (
+            <button
+              onClick={handleAdd}
+              className="px-5 py-2.5 bg-lavender text-white text-sm font-bold rounded-2xl hover:opacity-90 transition-all active:scale-95"
+            >
+              + Add first task
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-3">

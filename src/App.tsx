@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuthContext } from './context/AuthContext';
 import { FamilyProvider } from './context/FamilyContext';
 import { TaskProvider } from './context/TaskContext';
@@ -25,10 +25,12 @@ import JoinFamily from './pages/FamilySetup/JoinFamily';
 import FamilySettings from './pages/Family/Settings';
 import VoiceCapture from './pages/Voice/VoiceCapture';
 import TestVoice from './pages/Voice/TestVoice';
+import Onboarding, { ONBOARDING_KEY } from './pages/Onboarding';
 
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuthContext();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -38,7 +40,13 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  return user ? children : <Navigate to="/login" />;
+  if (!user) return <Navigate to="/login" />;
+
+  if (!localStorage.getItem(ONBOARDING_KEY) && location.pathname !== '/onboarding') {
+    return <Navigate to="/onboarding" />;
+  }
+
+  return <>{children}</>;
 };
 
 const AppRoutes = () => {
@@ -62,6 +70,7 @@ const AppRoutes = () => {
       <Route path="/family-setup" element={<ProtectedRoute><FamilySetup /></ProtectedRoute>} />
       <Route path="/voice-capture" element={<ProtectedRoute><VoiceCapture /></ProtectedRoute>} />
       <Route path="/test-voice" element={<ProtectedRoute><TestVoice /></ProtectedRoute>} />
+      <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
       <Route path="/" element={<Navigate to="/home" />} />
     </Routes>
   );

@@ -284,8 +284,16 @@ export default function Rewards() {
           {tab === 'leaderboard' && (
             <div className="space-y-4">
               {kidProfiles.length === 0 ? (
-                <div className="p-4 bg-plum-soft border border-lavender/20 rounded-xl text-sm text-lavender text-center">
-                  Add kids in the Family tab to track their points
+                <div className="flex flex-col items-center text-center py-10 px-6">
+                  <div className="text-5xl mb-4">⭐</div>
+                  <p className="font-bold text-ink mb-1">No kid profiles yet</p>
+                  <p className="text-sm text-ink-4 mb-5">Add kids in the Family tab to start tracking their points and rewards.</p>
+                  <button
+                    onClick={() => navigate('/family')}
+                    className="px-5 py-2.5 bg-lavender text-white text-sm font-bold rounded-2xl hover:opacity-90 transition-all active:scale-95"
+                  >
+                    Go to Family tab
+                  </button>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-3">

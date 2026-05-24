@@ -129,10 +129,20 @@ export default function Habits() {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-lavender" />
         </div>
       ) : visibleHabits.length === 0 ? (
-        <div className="text-center py-16">
-          <div className="text-5xl mb-4">🎯</div>
-          <p className="text-ink-3 font-medium">No habits yet</p>
-          <p className="text-sm text-ink-4 mt-1">Tap + to build your first habit</p>
+        <div className="flex flex-col items-center text-center py-16 px-6">
+          <div className="text-5xl mb-4">🔥</div>
+          <p className="font-bold text-ink mb-1">No habits yet</p>
+          <p className="text-sm text-ink-4 mb-5">
+            {activeTab === 'me'
+              ? 'Tap + to create your first habit. Streaks keep you motivated!'
+              : 'No habits assigned to this kid yet. Tap + to create one.'}
+          </p>
+          <button
+            onClick={() => { setEditingHabit(null); setModalOpen(true); }}
+            className="px-5 py-2.5 bg-lavender text-white text-sm font-bold rounded-2xl hover:opacity-90 transition-all active:scale-95"
+          >
+            + Add first habit
+          </button>
         </div>
       ) : (
         <div className="space-y-3">

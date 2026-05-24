@@ -128,10 +128,10 @@ export default function Grocery() {
         <>
           {/* ── UNPURCHASED ── */}
           {unpurchased.length === 0 && purchased.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="text-5xl mb-3">🛒</div>
-              <p className="text-gray-500 font-medium">Your list is empty</p>
-              <p className="text-sm text-gray-400 mt-1">Add items above to get started</p>
+            <div className="flex flex-col items-center text-center py-16 px-6">
+              <div className="text-5xl mb-4">🛒</div>
+              <p className="font-bold text-ink mb-1">Your list is empty</p>
+              <p className="text-sm text-ink-4">Type an item above and tap Add — it syncs instantly with your family.</p>
             </div>
           ) : (
             <>
