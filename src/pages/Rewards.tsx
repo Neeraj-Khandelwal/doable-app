@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../context/AuthContext';
 import { useRewardsContext } from '../context/RewardsContext';
 import { useTaskContext } from '../context/TaskContext';
@@ -38,8 +39,9 @@ export default function Rewards() {
   const { rewards, redemptions, kidPointEvents, loading, error, createReward, updateReward, deleteReward, redeemReward, addPointEvent, resetKidPoints } =
     useRewardsContext();
   const { tasks } = useTaskContext();
-  const { kidProfiles, isOwner, ratingConfig, updateRatingConfig } = useFamilyContext();
+  const { family, kidProfiles, isOwner, ratingConfig, updateRatingConfig } = useFamilyContext();
   const { habits } = useHabitContext();
+  const navigate = useNavigate();
 
   const [tab, setTab] = useState<Tab>('leaderboard');
   const [rewardModalOpen, setRewardModalOpen] = useState(false);
@@ -160,6 +162,22 @@ export default function Rewards() {
   ];
 
   const resetKid = kidProfiles.find((k) => k.id === resetKidId);
+
+  if (!loading && !family) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
+        <div className="text-5xl mb-4">⭐</div>
+        <h2 className="text-xl font-extrabold text-ink mb-2">No family yet</h2>
+        <p className="text-sm text-ink-3 mb-6">Create or join a family to set up rewards for your kids.</p>
+        <button
+          onClick={() => navigate('/family')}
+          className="px-6 py-3 bg-lavender text-white font-bold rounded-2xl hover:opacity-90 transition-all active:scale-95"
+        >
+          Go to Family tab
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 pb-4">

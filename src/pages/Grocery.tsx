@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useGroceryContext } from '../context/GroceryContext';
 import { useFamilyContext } from '../context/FamilyContext';
 import { useAuthContext } from '../context/AuthContext';
@@ -10,6 +11,7 @@ export default function Grocery() {
     useGroceryContext();
   const { family, familyMembers } = useFamilyContext();
   const { user } = useAuthContext();
+  const navigate = useNavigate();
 
   const nameFor = useMemo(() => {
     const first = (s: string) => s.split(' ')[0];
@@ -53,12 +55,18 @@ export default function Grocery() {
     await clearPurchased();
   };
 
-  if (!family) {
+  if (!loading && !family) {
     return (
-      <div className="text-center py-16 space-y-2">
-        <div className="text-4xl">🛒</div>
-        <p className="text-gray-500 font-medium">Set up your family first</p>
-        <p className="text-sm text-gray-400">The grocery list is shared with your family members.</p>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
+        <div className="text-5xl mb-4">🛒</div>
+        <h2 className="text-xl font-extrabold text-ink mb-2">No family yet</h2>
+        <p className="text-sm text-ink-3 mb-6">Create or join a family to use the grocery list.</p>
+        <button
+          onClick={() => navigate('/family')}
+          className="px-6 py-3 bg-lavender text-white font-bold rounded-2xl hover:opacity-90 transition-all active:scale-95"
+        >
+          Go to Family tab
+        </button>
       </div>
     );
   }

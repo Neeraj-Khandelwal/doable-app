@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useHabitContext } from '../context/HabitContext';
 import { useFamilyContext } from '../context/FamilyContext';
 import { useRewardsContext } from '../context/RewardsContext';
@@ -10,9 +11,10 @@ import HabitModal from '../components/habits/HabitModal';
 export default function Habits() {
   const { habits, completions, loading, error, createHabit, updateHabit, deleteHabit, completeHabit, undoComplete, getTodayCount, getStreak } =
     useHabitContext();
-  const { kidProfiles } = useFamilyContext();
+  const { family, kidProfiles } = useFamilyContext();
   const { refreshRewards } = useRewardsContext();
   const { fireForKids } = useConfetti();
+  const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState<string>('me');
   const [modalOpen, setModalOpen] = useState(false);
@@ -55,6 +57,22 @@ export default function Habits() {
     setModalOpen(false);
     setEditingHabit(null);
   };
+
+  if (!loading && !family) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
+        <div className="text-5xl mb-4">🔥</div>
+        <h2 className="text-xl font-extrabold text-ink mb-2">No family yet</h2>
+        <p className="text-sm text-ink-3 mb-6">Create or join a family to start tracking habits.</p>
+        <button
+          onClick={() => navigate('/family')}
+          className="px-6 py-3 bg-lavender text-white font-bold rounded-2xl hover:opacity-90 transition-all active:scale-95"
+        >
+          Go to Family tab
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 pb-4">
