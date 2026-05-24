@@ -197,7 +197,8 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
   }, [tasks, filter]);
 
   const createTask = async (data: Omit<Partial<Task>, 'id' | 'created_at' | 'updated_at'>) => {
-    if (!family?.id || !user?.id) return { error: 'Not authenticated' };
+    if (!user?.id) return { error: 'Not authenticated' };
+    if (!family?.id) return { error: 'Please create or join a family first' };
 
     const assignedToUserId = data.assigned_to_user_id ?? null;
     const payload = {

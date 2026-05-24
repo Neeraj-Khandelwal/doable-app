@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useTaskContext, type TaskFilter } from '../context/TaskContext';
 import { useFamilyContext } from '../context/FamilyContext';
 import { useAuthContext } from '../context/AuthContext';
@@ -30,11 +30,12 @@ const KID_COLOR_MAP: Record<string, string> = {
 
 export default function Tasks() {
   const { filteredTasks, tasks, loading, error, filter, setFilter, createTask, updateTask, deleteTask, markComplete, rateAndComplete, acceptTask, rejectTask } = useTaskContext();
-  const { kidProfiles, familyMembers } = useFamilyContext();
+  const { family, kidProfiles, familyMembers } = useFamilyContext();
   const { user } = useAuthContext();
 
   const { fire, fireForKids } = useConfetti();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -150,6 +151,22 @@ export default function Tasks() {
     if (task.created_by === partner?.userId) return partner.name;
     return 'Someone';
   };
+
+  if (!loading && !family) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
+        <div className="text-5xl mb-4">🏠</div>
+        <h2 className="text-xl font-extrabold text-ink mb-2">No family yet</h2>
+        <p className="text-sm text-ink-3 mb-6">Create or join a family to start adding tasks.</p>
+        <button
+          onClick={() => navigate('/family')}
+          className="px-6 py-3 bg-lavender text-white font-bold rounded-2xl hover:opacity-90 transition-all active:scale-95"
+        >
+          Go to Family tab
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 pb-4">
