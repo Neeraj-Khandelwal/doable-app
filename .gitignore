@@ -27,6 +27,7 @@ npm-debug.log*
 # Android signing key — never commit
 *.keystore
 *.jks
+android/keystore.properties
 
 # Android Studio IDE files
 .idea/
