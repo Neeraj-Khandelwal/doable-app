@@ -3,6 +3,7 @@ import { supabase } from '../supabaseClient';
 import { useAuthContext } from './AuthContext';
 import { useFamilyContext } from './FamilyContext';
 import { type Habit, type HabitCompletion, todayStr, computeStreak } from '../utils/habitModels';
+import { DEFAULT_HABIT_POINTS_CONFIG } from '../utils/familyModels';
 
 type HabitContextValue = {
   habits: Habit[];
@@ -12,7 +13,7 @@ type HabitContextValue = {
   createHabit: (data: Partial<Habit>) => Promise<{ data?: Habit; error?: string }>;
   updateHabit: (id: string, updates: Partial<Habit>) => Promise<{ data?: Habit; error?: string }>;
   deleteHabit: (id: string) => Promise<{ error?: string }>;
-  completeHabit: (habitId: string, assignee: string) => Promise<{ error?: string; bonusAwarded?: boolean }>;
+  completeHabit: (habitId: string, assignee: string) => Promise<{ error?: string; bonusAwarded?: boolean; streakMilestone?: number; bonusPoints?: number }>;
   undoComplete: (habitId: string, assignee: string) => Promise<{ error?: string }>;
   getTodayCount: (habitId: string, assignee: string) => number;
   getStreak: (habit: Habit, assignee: string) => number;
@@ -30,7 +31,7 @@ export const useHabitContext = () => {
 
 export const HabitProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuthContext();
-  const { family } = useFamilyContext();
+  const { family, habitPointsConfig } = useFamilyContext();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [completions, setCompletions] = useState<HabitCompletion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -108,11 +109,13 @@ export const HabitProvider = ({ children }: { children: ReactNode }) => {
     if (assignee !== 'me') {
       const habit = habits.find((h) => h.id === habitId);
       if (habit) {
-        // 1 point per completion
+        const cfg = habitPointsConfig ?? DEFAULT_HABIT_POINTS_CONFIG;
+
+        // Points per completion
         await supabase.from('kid_point_events').insert([{
           kid_id: assignee,
           family_id: family.id,
-          points: 1,
+          points: cfg.completion_points,
           reason: `Habit: ${habit.title}`,
           type: 'habit_completion',
           habit_id: habitId,
@@ -120,24 +123,24 @@ export const HabitProvider = ({ children }: { children: ReactNode }) => {
           event_date: today,
         }]);
 
-        // 5-point bonus every 7-day streak
+        // Streak bonus every N days
         const updatedCompletions = [newCompletion, ...completions];
         const newStreak = computeStreak(updatedCompletions, assignee, habit);
-        if (newStreak > 0 && newStreak % 7 === 0) {
+        if (newStreak > 0 && newStreak % cfg.streak_milestone === 0) {
           const { error: bonusErr } = await supabase
             .from('kid_point_events')
             .insert([{
               kid_id: assignee,
               family_id: family.id,
-              points: 5,
-              reason: `7-day streak: ${habit.title}`,
+              points: cfg.streak_bonus_points,
+              reason: `${cfg.streak_milestone}-day streak: ${habit.title}`,
               type: 'streak_bonus',
               habit_id: habitId,
               created_by: user?.id ?? 'system',
               event_date: today,
             }]);
 
-          if (!bonusErr) return { bonusAwarded: true };
+          if (!bonusErr) return { bonusAwarded: true, streakMilestone: cfg.streak_milestone, bonusPoints: cfg.streak_bonus_points };
         }
       }
     }

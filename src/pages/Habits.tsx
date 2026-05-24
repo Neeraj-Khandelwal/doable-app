@@ -20,6 +20,7 @@ export default function Habits() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const [bonusKidId, setBonusKidId] = useState<string | null>(null);
+  const [bonusInfo, setBonusInfo] = useState<{ milestone: number; points: number }>({ milestone: 5, points: 5 });
 
   const tabs = [
     { key: 'me', label: 'Mine' },
@@ -82,7 +83,7 @@ export default function Habits() {
         return kid ? (
           <div className="fixed top-4 left-0 right-0 flex justify-center z-50 pointer-events-none">
             <div className="bg-amber text-white px-5 py-3 rounded-2xl shadow-xl font-bold text-sm flex items-center gap-2 animate-bounce">
-              🔥 {kid.name} earned +5 bonus pts for a 7-day streak!
+              🔥 {kid.name} earned +{bonusInfo.points} bonus pts for a {bonusInfo.milestone}-day streak!
             </div>
           </div>
         ) : null;
@@ -164,6 +165,7 @@ export default function Habits() {
                 if (result.bonusAwarded) {
                   const kid = kidProfiles.find((k) => k.id === activeTab);
                   if (kid) fireForKids([kid.color]);
+                  setBonusInfo({ milestone: result.streakMilestone ?? 5, points: result.bonusPoints ?? 5 });
                   setBonusKidId(activeTab);
                   setTimeout(() => setBonusKidId(null), 3000);
                   void refreshRewards();

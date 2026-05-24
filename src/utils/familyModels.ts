@@ -7,6 +7,18 @@ export type FamilyColor = 'lavender' | 'peach' | 'mint' | 'sky' | 'amber' | 'ros
 
 import type { RatingOption } from './taskModels';
 
+export interface HabitPointsConfig {
+  completion_points: number;   // points per habit completion
+  streak_milestone: number;    // days in a row to trigger bonus
+  streak_bonus_points: number; // bonus points awarded at milestone
+}
+
+export const DEFAULT_HABIT_POINTS_CONFIG: HabitPointsConfig = {
+  completion_points: 1,
+  streak_milestone: 5,
+  streak_bonus_points: 5,
+};
+
 export interface Family {
   id: string;
   name: string;
@@ -14,6 +26,7 @@ export interface Family {
   invite_code: string | null;
   max_members: number;
   rating_config: RatingOption[] | null;
+  habit_points_config: HabitPointsConfig | null;
   created_at: string;
   updated_at: string;
 }

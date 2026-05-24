@@ -12,6 +12,7 @@ import KidPointsCard from '../components/rewards/KidPointsCard';
 import RewardCard from '../components/rewards/RewardCard';
 import RewardModal from '../components/rewards/RewardModal';
 import RatingConfigModal from '../components/tasks/RatingConfigModal';
+import HabitPointsConfigModal from '../components/rewards/HabitPointsConfigModal';
 
 type Tab = 'leaderboard' | 'store' | 'history';
 
@@ -39,7 +40,7 @@ export default function Rewards() {
   const { rewards, redemptions, kidPointEvents, loading, error, createReward, updateReward, deleteReward, redeemReward, addPointEvent, resetKidPoints } =
     useRewardsContext();
   const { tasks } = useTaskContext();
-  const { family, kidProfiles, isOwner, ratingConfig, updateRatingConfig } = useFamilyContext();
+  const { family, kidProfiles, isOwner, ratingConfig, updateRatingConfig, habitPointsConfig, updateHabitPointsConfig } = useFamilyContext();
   const { habits } = useHabitContext();
   const navigate = useNavigate();
 
@@ -47,6 +48,7 @@ export default function Rewards() {
   const [rewardModalOpen, setRewardModalOpen] = useState(false);
   const [editingReward, setEditingReward] = useState<Reward | null>(null);
   const [ratingConfigOpen, setRatingConfigOpen] = useState(false);
+  const [habitPointsConfigOpen, setHabitPointsConfigOpen] = useState(false);
   const [givePointsKidId, setGivePointsKidId] = useState<string | undefined>();
   const [givePointsOpen, setGivePointsOpen] = useState(false);
   const [resetKidId, setResetKidId] = useState<string | undefined>();
@@ -246,12 +248,20 @@ export default function Rewards() {
           <h1 className="text-2xl font-extrabold text-ink">Rewards</h1>
         </div>
         {isOwner && (
-          <button
-            onClick={() => setRatingConfigOpen(true)}
-            className="text-xs font-semibold text-lavender bg-plum-soft px-3 py-1.5 rounded-full hover:opacity-80 transition-opacity"
-          >
-            ⚙️ Ratings
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setHabitPointsConfigOpen(true)}
+              className="text-xs font-semibold text-amber bg-amber/10 px-3 py-1.5 rounded-full hover:opacity-80 transition-opacity"
+            >
+              ⚙️ Habits
+            </button>
+            <button
+              onClick={() => setRatingConfigOpen(true)}
+              className="text-xs font-semibold text-lavender bg-plum-soft px-3 py-1.5 rounded-full hover:opacity-80 transition-opacity"
+            >
+              ⚙️ Ratings
+            </button>
+          </div>
         )}
       </div>
 
@@ -458,7 +468,7 @@ export default function Rewards() {
                               </span>
                             )}
                             <span className="text-xs text-ink-4">
-                              {isStreakBonus ? '🔥 7-day streak bonus' : isAdhoc ? '⭐ Adhoc award' : evt.ratingType}
+                              {isStreakBonus ? '🔥 Streak bonus' : isAdhoc ? '⭐ Adhoc award' : evt.ratingType}
                             </span>
                             <span className="text-xs text-ink-4">·</span>
                             <span className="text-xs text-ink-4">{date}</span>
@@ -509,6 +519,13 @@ export default function Rewards() {
         defaultKidId={givePointsKidId}
         userId={user?.id ?? ''}
         onSave={addPointEvent}
+      />
+
+      <HabitPointsConfigModal
+        isOpen={habitPointsConfigOpen}
+        onClose={() => setHabitPointsConfigOpen(false)}
+        current={habitPointsConfig}
+        onSave={async (cfg) => { await updateHabitPointsConfig(cfg); }}
       />
     </div>
   );

@@ -1,7 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { supabase } from '../supabaseClient';
 import { useAuthContext } from './AuthContext';
-import type { Family, FamilyMember, KidProfile } from '../utils/familyModels';
+import type { Family, FamilyMember, KidProfile, HabitPointsConfig } from '../utils/familyModels';
+import { DEFAULT_HABIT_POINTS_CONFIG } from '../utils/familyModels';
 import { type RatingOption, DEFAULT_RATING_OPTIONS } from '../utils/taskModels';
 
 const generateInviteCodeValue = () => Math.random().toString(36).slice(2, 8).toUpperCase();
@@ -18,6 +19,8 @@ type FamilyContextValue = {
   generateInviteCode: () => Promise<{ data?: Family; error?: any }>;
   ratingConfig: RatingOption[];
   updateRatingConfig: (options: RatingOption[]) => Promise<{ error?: any }>;
+  habitPointsConfig: HabitPointsConfig;
+  updateHabitPointsConfig: (config: HabitPointsConfig) => Promise<{ error?: any }>;
   updateFamily: (updates: Partial<Pick<Family, 'name' | 'invite_code'>>) => Promise<{ data?: Family; error?: any }>;
   updateFamilyMember: (id: string, updates: Partial<FamilyMember>) => Promise<{ data?: FamilyMember; error?: any }>;
   removeFamilyMember: (id: string) => Promise<{ success?: boolean; error?: any }>;
@@ -396,6 +399,15 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
     return updateFamily({ rating_config: options } as any);
   };
 
+  const habitPointsConfig: HabitPointsConfig = useMemo(
+    () => family?.habit_points_config ?? DEFAULT_HABIT_POINTS_CONFIG,
+    [family]
+  );
+
+  const updateHabitPointsConfig = async (config: HabitPointsConfig) => {
+    return updateFamily({ habit_points_config: config } as any);
+  };
+
   const isOwner = useMemo(
     () => !!family && user?.id === family.owner_id,
     [family, user]
@@ -410,6 +422,8 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
     isOwner,
     ratingConfig,
     updateRatingConfig,
+    habitPointsConfig,
+    updateHabitPointsConfig,
     createFamily,
     joinFamily,
     generateInviteCode,
