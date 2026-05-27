@@ -384,17 +384,17 @@ ALTER TABLE tasks          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_profiles  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE fcm_tokens     ENABLE ROW LEVEL SECURITY;
 
--- ── Tables with RLS DISABLED (dev convenience — enable before full production) ─
+-- ── Additional tables with RLS ENABLED ───────────────────────────────────────
 
-ALTER TABLE habits              DISABLE ROW LEVEL SECURITY;
-ALTER TABLE habit_completions   DISABLE ROW LEVEL SECURITY;
-ALTER TABLE rewards             DISABLE ROW LEVEL SECURITY;
-ALTER TABLE reward_redemptions  DISABLE ROW LEVEL SECURITY;
-ALTER TABLE kid_point_events    DISABLE ROW LEVEL SECURITY;
-ALTER TABLE fast_sessions       DISABLE ROW LEVEL SECURITY;
-ALTER TABLE fasting_goals       DISABLE ROW LEVEL SECURITY;
-ALTER TABLE grocery_items       DISABLE ROW LEVEL SECURITY;
-ALTER TABLE alarms              DISABLE ROW LEVEL SECURITY;
+ALTER TABLE habits             ENABLE ROW LEVEL SECURITY;
+ALTER TABLE habit_completions  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE rewards            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE reward_redemptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE kid_point_events   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE fast_sessions      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE fasting_goals      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE grocery_items      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE alarms             ENABLE ROW LEVEL SECURITY;
 
 -- ── Policies ─────────────────────────────────────────────────────────────────
 
@@ -436,7 +436,8 @@ CREATE POLICY "up_upd" ON user_profiles FOR UPDATE USING (auth.uid() = id);
 -- fcm_tokens
 CREATE POLICY "fcm_own_row" ON fcm_tokens FOR ALL USING (auth.uid()::text = user_id);
 
--- Policies that take effect when RLS is later enabled on these tables:
+-- habits, habit_completions, rewards, reward_redemptions, kid_point_events,
+-- fast_sessions, fasting_goals, grocery_items (family-scoped)
 
 CREATE POLICY "hab_sel" ON habits FOR SELECT USING (is_family_member(family_id));
 CREATE POLICY "hab_ins" ON habits FOR INSERT WITH CHECK (is_family_member(family_id));
@@ -473,6 +474,12 @@ CREATE POLICY "gi_sel" ON grocery_items FOR SELECT USING (is_family_member(famil
 CREATE POLICY "gi_ins" ON grocery_items FOR INSERT WITH CHECK (is_family_member(family_id));
 CREATE POLICY "gi_upd" ON grocery_items FOR UPDATE USING (is_family_member(family_id));
 CREATE POLICY "gi_del" ON grocery_items FOR DELETE USING (is_family_member(family_id));
+
+-- alarms: user_id is TEXT, cast auth.uid() for comparison
+CREATE POLICY "alm_sel" ON alarms FOR SELECT USING (user_id = auth.uid()::text);
+CREATE POLICY "alm_ins" ON alarms FOR INSERT WITH CHECK (user_id = auth.uid()::text);
+CREATE POLICY "alm_upd" ON alarms FOR UPDATE USING (user_id = auth.uid()::text);
+CREATE POLICY "alm_del" ON alarms FOR DELETE USING (user_id = auth.uid()::text);
 
 
 -- =============================================================================
