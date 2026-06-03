@@ -20,16 +20,18 @@ interface HabitCardProps {
   kids: KidProfile[];
   completedDates?: Set<string>; // pre-filtered dates for this habit+assignee
   onComplete: (date: string) => void;
-  onUndo: () => void;
+  onUndo: (date?: string) => void;
   onEdit: () => void;
 }
 
 const DAY_ABBR = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
-function WeekStrip({ habit, completedDates, accentColor }: {
+function WeekStrip({ habit, completedDates, accentColor, onComplete, onUndo }: {
   habit: Habit;
   completedDates: Set<string>;
   accentColor: string;
+  onComplete: (date: string) => void;
+  onUndo: (date: string) => void;
 }) {
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
@@ -49,16 +51,26 @@ function WeekStrip({ habit, completedDates, accentColor }: {
           <span className={`text-[10px] font-medium ${isToday ? 'text-gray-700' : 'text-gray-400'}`}>
             {DAY_ABBR[dayOfWeek]}
           </span>
-          <div
-            className="w-6 h-6 rounded-full flex items-center justify-center"
-            style={{
-              backgroundColor: completed ? accentColor : scheduled ? `${accentColor}20` : 'transparent',
-              border: scheduled ? `1.5px solid ${completed ? accentColor : `${accentColor}40`}` : 'none',
-            }}
-          >
-            {completed && <span className="text-white text-[10px] leading-none">✓</span>}
-            {!completed && !scheduled && <span className="text-gray-200 text-[10px]">–</span>}
-          </div>
+          {scheduled ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                completed ? onUndo(dateStr) : onComplete(dateStr);
+              }}
+              className="w-6 h-6 rounded-full flex items-center justify-center active:scale-90 transition-transform"
+              style={{
+                backgroundColor: completed ? accentColor : `${accentColor}20`,
+                border: `1.5px solid ${completed ? accentColor : `${accentColor}40`}`,
+              }}
+              aria-label={completed ? `Undo ${dateStr}` : `Complete for ${dateStr}`}
+            >
+              {completed && <span className="text-white text-[10px] leading-none">✓</span>}
+            </button>
+          ) : (
+            <div className="w-6 h-6 rounded-full flex items-center justify-center">
+              <span className="text-gray-200 text-[10px]">–</span>
+            </div>
+          )}
         </div>
       ))}
     </div>
@@ -190,7 +202,13 @@ export default function HabitCard({ habit, assignee, todayCount, streak, kids, c
 
       {/* 7-day strip for daily habits */}
       {habit.frequency === 'daily' && completedDates && (
-        <WeekStrip habit={habit} completedDates={completedDates} accentColor={accentColor} />
+        <WeekStrip
+          habit={habit}
+          completedDates={completedDates}
+          accentColor={accentColor}
+          onComplete={onComplete}
+          onUndo={onUndo}
+        />
       )}
 
       {/* Backdate picker */}

@@ -14,7 +14,7 @@ type HabitContextValue = {
   updateHabit: (id: string, updates: Partial<Habit>) => Promise<{ data?: Habit; error?: string }>;
   deleteHabit: (id: string) => Promise<{ error?: string }>;
   completeHabit: (habitId: string, assignee: string, date?: string) => Promise<{ error?: string; bonusAwarded?: boolean; streakMilestone?: number; bonusPoints?: number }>;
-  undoComplete: (habitId: string, assignee: string) => Promise<{ error?: string }>;
+  undoComplete: (habitId: string, assignee: string, date?: string) => Promise<{ error?: string }>;
   getTodayCount: (habitId: string, assignee: string) => number;
   getStreak: (habit: Habit, assignee: string) => number;
   refreshHabits: () => Promise<void>;
@@ -148,10 +148,10 @@ export const HabitProvider = ({ children }: { children: ReactNode }) => {
     return {};
   };
 
-  const undoComplete = async (habitId: string, assignee: string) => {
-    const today = todayStr();
+  const undoComplete = async (habitId: string, assignee: string, date?: string) => {
+    const targetDate = date ?? todayStr();
     const latest = completions.find(
-      (c) => c.habit_id === habitId && c.completed_by === assignee && c.date === today
+      (c) => c.habit_id === habitId && c.completed_by === assignee && c.date === targetDate
     );
     if (!latest) return {};
 

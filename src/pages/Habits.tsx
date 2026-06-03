@@ -171,7 +171,7 @@ export default function Habits() {
                   void refreshRewards();
                 }
               }}
-              onUndo={() => void undoComplete(habit.id, activeTab)}
+              onUndo={(date?: string) => void undoComplete(habit.id, activeTab, date)}
               onEdit={() => handleEdit(habit)}
             />
           ))}
