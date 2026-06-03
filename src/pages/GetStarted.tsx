@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useFamilyContext } from '../context/FamilyContext';
+import { useAuthContext } from '../context/AuthContext';
 import { ONBOARDING_KEY } from './Onboarding';
 
 export const GET_STARTED_KEY = 'doable_get_started_done';
@@ -10,6 +11,7 @@ export default function GetStarted() {
   const [searchParams] = useSearchParams();
   const { createFamily } = useFamilyContext();
 
+  const { user } = useAuthContext();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -30,7 +32,7 @@ export default function GetStarted() {
       setError('Something went wrong. Please try again.');
       return;
     }
-    localStorage.setItem(GET_STARTED_KEY, '1');
+    localStorage.setItem(`${GET_STARTED_KEY}_${user?.id}`, '1');
     navigate('/onboarding');
   };
 
@@ -43,8 +45,8 @@ export default function GetStarted() {
   };
 
   const handleSkip = () => {
-    localStorage.setItem(GET_STARTED_KEY, '1');
-    const destination = localStorage.getItem(ONBOARDING_KEY) ? '/home' : '/onboarding';
+    localStorage.setItem(`${GET_STARTED_KEY}_${user?.id}`, '1');
+    const destination = localStorage.getItem(`${ONBOARDING_KEY}_${user?.id}`) ? '/home' : '/onboarding';
     navigate(destination);
   };
 

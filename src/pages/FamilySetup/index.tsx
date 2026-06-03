@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFamilyContext } from '../../context/FamilyContext';
+import { useAuthContext } from '../../context/AuthContext';
 import { GET_STARTED_KEY } from '../GetStarted';
 import { ONBOARDING_KEY } from '../Onboarding';
 import type { FamilyColor } from '../../utils/familyModels';
@@ -282,6 +283,7 @@ function StepComplete({ onFinish }: { onFinish: () => void }) {
 
 export default function FamilySetup() {
   const navigate = useNavigate();
+  const { user } = useAuthContext();
   const [step, setStep] = useState(1);
 
   const handleNext = () => {
@@ -291,8 +293,8 @@ export default function FamilySetup() {
   };
 
   const handleFinish = () => {
-    localStorage.setItem(GET_STARTED_KEY, '1');
-    const destination = localStorage.getItem(ONBOARDING_KEY) ? '/home' : '/onboarding';
+    localStorage.setItem(`${GET_STARTED_KEY}_${user?.id}`, '1');
+    const destination = localStorage.getItem(`${ONBOARDING_KEY}_${user?.id}`) ? '/home' : '/onboarding';
     navigate(destination);
   };
 

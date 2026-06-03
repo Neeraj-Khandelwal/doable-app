@@ -43,9 +43,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   if (!user) return <Navigate to="/login" />;
 
-  const onboardingDone = !!localStorage.getItem(ONBOARDING_KEY);
+  const onboardingDone = !!localStorage.getItem(`${ONBOARDING_KEY}_${user.id}`);
   // Existing users who completed onboarding before this screen existed are implicitly done
-  const getStartedDone = !!localStorage.getItem(GET_STARTED_KEY) || onboardingDone;
+  const getStartedDone = !!localStorage.getItem(`${GET_STARTED_KEY}_${user.id}`) || onboardingDone;
 
   if (!getStartedDone && location.pathname !== '/get-started' && location.pathname !== '/join') {
     const code = new URLSearchParams(location.search).get('code');

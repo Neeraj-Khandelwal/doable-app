@@ -73,8 +73,8 @@ export default function JoinFamily() {
     }
 
     setStatus('success');
-    localStorage.setItem(GET_STARTED_KEY, '1');
-    const destination = localStorage.getItem(ONBOARDING_KEY) ? '/home' : '/onboarding';
+    localStorage.setItem(`${GET_STARTED_KEY}_${user?.id}`, '1');
+    const destination = localStorage.getItem(`${ONBOARDING_KEY}_${user?.id}`) ? '/home' : '/onboarding';
     setTimeout(() => navigate(destination), 1800);
   };
 
@@ -129,10 +129,10 @@ export default function JoinFamily() {
           </button>
 
           <button
-            onClick={() => navigate(localStorage.getItem(GET_STARTED_KEY) ? '/family' : '/get-started')}
+            onClick={() => navigate(localStorage.getItem(`${GET_STARTED_KEY}_${user?.id}`) ? '/family' : '/get-started')}
             className="w-full py-2 text-violet-600 hover:text-violet-700 font-semibold text-sm"
           >
-            {localStorage.getItem(GET_STARTED_KEY) ? 'Back to Family' : 'Back'}
+            {localStorage.getItem(`${GET_STARTED_KEY}_${user?.id}`) ? 'Back to Family' : 'Back'}
           </button>
         </div>
       </div>
