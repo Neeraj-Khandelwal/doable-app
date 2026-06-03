@@ -36,7 +36,7 @@ const KID_COLOR_MAP: Record<string, string> = {
 
 export default function Rewards() {
   const { user } = useAuthContext();
-  const { rewards, redemptions, kidPointEvents, loading, error, createReward, updateReward, deleteReward, redeemReward, addPointEvent, resetKidPoints } =
+  const { rewards, redemptions, kidPointEvents, loading, error, createReward, updateReward, deleteReward, redeemReward, addPointEvent, deletePointEvent, resetKidPoints } =
     useRewardsContext();
   const { tasks } = useTaskContext();
   const { family, kidProfiles, isOwner, ratingConfig, updateRatingConfig, habitPointsConfig, updateHabitPointsConfig } = useFamilyContext();
@@ -53,6 +53,8 @@ export default function Rewards() {
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [resetResetting, setResetResetting] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [confirmDeleteEventId, setConfirmDeleteEventId] = useState<string | null>(null);
+  const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
 
   const pointsEarned = useMemo(() => {
     const earned: Record<string, number> = {};
@@ -419,6 +421,10 @@ export default function Rewards() {
 
                   const isStreakBonus = evt.ratingType === 'streak_bonus';
                   const isAdhoc = evt.ratingType === 'adhoc';
+                  const isDeletable = isOwner && evt.key.startsWith('event-');
+                  const eventId = evt.key.startsWith('event-') ? evt.key.replace('event-', '') : null;
+                  const isConfirming = confirmDeleteEventId === eventId;
+                  const isDeleting = deletingEventId === eventId;
                   const iconEmoji = isStreakBonus ? '🔥' : isAdhoc ? (evt.points >= 0 ? '⭐' : '📉') : (ratingOpt?.emoji ?? '⭐');
                   const iconBg = isStreakBonus ? '#E8A80025' : `${kidColor}25`;
                   return (
@@ -464,10 +470,44 @@ export default function Rewards() {
                             <span className="text-xs text-ink-4">{date}</span>
                           </div>
                         </div>
-                        <span className={`text-sm font-extrabold flex-shrink-0 ${evt.points >= 0 ? 'text-green' : 'text-rose'}`}>
-                          {evt.points >= 0 ? '+' : ''}{evt.points}
-                        </span>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className={`text-sm font-extrabold ${evt.points >= 0 ? 'text-green' : 'text-rose'}`}>
+                            {evt.points >= 0 ? '+' : ''}{evt.points}
+                          </span>
+                          {isDeletable && !isConfirming && (
+                            <button
+                              onClick={() => setConfirmDeleteEventId(eventId)}
+                              className="w-7 h-7 rounded-full flex items-center justify-center text-gray-300 hover:text-rose hover:bg-red-50 transition-colors text-base"
+                              aria-label="Delete record"
+                            >
+                              🗑
+                            </button>
+                          )}
+                        </div>
                       </div>
+                      {/* Inline delete confirm */}
+                      {isConfirming && eventId && (
+                        <div className="flex gap-2 px-3 pb-3">
+                          <button
+                            onClick={() => setConfirmDeleteEventId(null)}
+                            className="flex-1 py-2 rounded-xl bg-gray-100 text-gray-600 text-xs font-semibold"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            disabled={isDeleting}
+                            onClick={async () => {
+                              setDeletingEventId(eventId);
+                              await deletePointEvent(eventId);
+                              setDeletingEventId(null);
+                              setConfirmDeleteEventId(null);
+                            }}
+                            className="flex-1 py-2 rounded-xl bg-rose text-white text-xs font-bold disabled:opacity-50"
+                          >
+                            {isDeleting ? 'Deleting…' : 'Delete & adjust balance'}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   );
                 })

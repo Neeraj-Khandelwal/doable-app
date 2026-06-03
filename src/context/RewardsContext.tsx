@@ -16,6 +16,7 @@ type RewardsContextValue = {
   deleteReward: (id: string) => Promise<{ error?: string }>;
   redeemReward: (rewardId: string, kidId: string, currentBalance: number) => Promise<{ error?: string }>;
   addPointEvent: (kidId: string, points: number, reason: string, photoUrl?: string | null) => Promise<{ error?: string }>;
+  deletePointEvent: (id: string) => Promise<{ error?: string }>;
   resetKidPoints: (kidId: string, includeHistory: boolean, currentBalance: number) => Promise<{ error?: string }>;
   refreshRewards: () => Promise<void>;
   resetAllRewardData: () => Promise<{ error?: string }>;
@@ -142,6 +143,13 @@ export const RewardsProvider = ({ children }: { children: ReactNode }) => {
     return {};
   };
 
+  const deletePointEvent = async (id: string) => {
+    const { error: deleteError } = await supabase.from('kid_point_events').delete().eq('id', id);
+    if (deleteError) return { error: deleteError.message };
+    setKidPointEvents((prev) => prev.filter((e) => e.id !== id));
+    return {};
+  };
+
   const resetKidPoints = async (kidId: string, includeHistory: boolean, currentBalance: number) => {
     if (!family?.id || !user?.id) return { error: 'Not authenticated' };
 
@@ -211,6 +219,7 @@ export const RewardsProvider = ({ children }: { children: ReactNode }) => {
         deleteReward,
         redeemReward,
         addPointEvent,
+        deletePointEvent,
         resetKidPoints,
         refreshRewards: fetchAll,
         resetAllRewardData: async () => {

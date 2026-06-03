@@ -215,11 +215,10 @@ export default function GivePointsModal({ isOpen, onClose, kids, defaultKidId, u
             />
           </div>
 
-          {/* Photo capture — only in Award mode */}
-          {mode === '+' && (
-            <div className="mb-4">
+          {/* Photo capture */}
+          <div className="mb-4">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                📷 Capture the moment <span className="font-normal text-gray-400">(optional)</span>
+                📷 Add photo <span className="font-normal text-gray-400">(optional)</span>
               </label>
 
               {photoDataUrl ? (
@@ -253,7 +252,6 @@ export default function GivePointsModal({ isOpen, onClose, kids, defaultKidId, u
                 </div>
               )}
             </div>
-          )}
 
           {/* Preview */}
           {amount && parseInt(amount) > 0 && selectedKid && (
