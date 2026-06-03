@@ -15,8 +15,13 @@ import {
   scheduleReminderNotification,
   cancelReminderNotification,
   registerForPushNotifications,
+  registerHabitNotificationActions,
+  addHabitNotificationActionListener,
+  scheduleSnoozeNotification,
+  HABIT_ACTION_TYPE_ID,
   idFromUuid,
 } from '../services/notificationService';
+import { supabase } from '../supabaseClient';
 import { isAndroidSystemClockAvailable } from '../services/androidClockAlarm';
 
 type ReminderItem = {
@@ -154,7 +159,7 @@ export default function Alarms() {
   const { habits, getTodayCount } = useHabitContext();
   const { alarms, createAlarm, updateAlarm, deleteAlarm, toggleAlarm } = useAlarmContext();
   const { user } = useAuthContext();
-  const { familyMembers } = useFamilyContext();
+  const { familyMembers, family } = useFamilyContext();
   const { permission, requestPermission, fire, isNative } = useNotifications();
   const isAndroidClock = isAndroidSystemClockAvailable();
 
@@ -169,6 +174,29 @@ export default function Alarms() {
       void registerForPushNotifications(user.id);
     }
   }, [isNative, user?.id]);
+
+  // ── Register habit notification action buttons + handle taps ─────────────────
+  useEffect(() => {
+    if (!isNative) return;
+    void registerHabitNotificationActions();
+    const cleanup = addHabitNotificationActionListener(async (actionId, extra, notifId, title, body) => {
+      if (actionId === 'complete') {
+        const { habitId, familyId, assignee } = extra;
+        if (habitId && familyId) {
+          await supabase.from('habit_completions').insert([{
+            habit_id: habitId,
+            family_id: familyId,
+            completed_by: assignee ?? 'me',
+            date: todayStr(),
+          }]);
+        }
+      } else if (actionId === 'snooze') {
+        await scheduleSnoozeNotification(notifId, title, body, extra, 10);
+      }
+      // 'dismiss' — notification already cleared, nothing to do
+    });
+    return cleanup;
+  }, [isNative]);
 
   // ── Reminder items from tasks + habits ──────────────────────────────────────
   const allReminders = useMemo<ReminderItem[]>(() => {
@@ -235,12 +263,20 @@ export default function Alarms() {
         void cancelReminderNotification(idFromUuid(item.id), item.nudgeInterval ?? 0);
         return;
       }
+      const habitExtra = item.type === 'habit' ? {
+        type: 'habit',
+        habitId: item.id.split(':')[0],
+        assignee: 'me',
+        familyId: family?.id ?? '',
+      } : undefined;
       void scheduleReminderNotification(
         idFromUuid(item.id),
         item.reminderTime,
         `${item.icon} ${item.title}`,
         item.type === 'habit' ? 'Time for your habit!' : "Don't forget this task!",
         item.nudgeInterval ?? 0,
+        habitExtra,
+        item.type === 'habit' ? HABIT_ACTION_TYPE_ID : undefined,
       );
     });
   }, [isNative, isAndroidClock, permission, allReminders]);

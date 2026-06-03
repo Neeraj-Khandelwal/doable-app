@@ -129,10 +129,89 @@ export async function cancelAlarmNotification(notifId: number, repeatDays: numbe
   await LocalNotifications.cancel({ notifications: ids });
 }
 
+// ── Habit notification action buttons ────────────────────────────────────────
+
+export const HABIT_ACTION_TYPE_ID = 'HABIT_REMINDER';
+
+/**
+ * Register the three action buttons that appear on habit reminder notifications.
+ * Call once on app start (native only). Safe to call multiple times.
+ */
+export async function registerHabitNotificationActions(): Promise<void> {
+  if (!isNative()) return;
+  await LocalNotifications.registerActionTypes({
+    types: [{
+      id: HABIT_ACTION_TYPE_ID,
+      actions: [
+        { id: 'complete', title: '✅ Mark Done', foreground: true },
+        { id: 'snooze',   title: '💤 Snooze 10 min' },
+        { id: 'dismiss',  title: 'Clear', destructive: true },
+      ],
+    }],
+  });
+}
+
+/**
+ * Listen for taps on habit notification action buttons.
+ * Returns a cleanup function — call it on component unmount.
+ */
+export function addHabitNotificationActionListener(
+  handler: (
+    actionId: string,
+    extra: Record<string, string>,
+    notifId: number,
+    title: string,
+    body: string,
+  ) => void,
+): () => void {
+  if (!isNative()) return () => {};
+  const promise = LocalNotifications.addListener(
+    'localNotificationActionPerformed',
+    (event) => {
+      const extra = (event.notification.extra ?? {}) as Record<string, string>;
+      if (extra.type !== 'habit') return;
+      handler(
+        event.actionId,
+        extra,
+        event.notification.id,
+        event.notification.title ?? '',
+        event.notification.body ?? '',
+      );
+    },
+  );
+  return () => { void promise.then((h) => h.remove()); };
+}
+
+/**
+ * Schedule a snooze notification that fires `minutes` from now,
+ * reusing the same notifId (safe — original has already fired).
+ */
+export async function scheduleSnoozeNotification(
+  notifId: number,
+  title: string,
+  body: string,
+  extra: Record<string, string>,
+  minutes: number,
+): Promise<void> {
+  if (!isNative()) return;
+  await LocalNotifications.schedule({
+    notifications: [{
+      id: notifId,
+      title,
+      body,
+      extra,
+      actionTypeId: HABIT_ACTION_TYPE_ID,
+      schedule: { at: new Date(Date.now() + minutes * 60 * 1000), allowWhileIdle: true },
+    }],
+  });
+}
+
 /**
  * Schedule a task/habit reminder notification.
  * If nudgeInterval > 0, schedules repeated notifications every nudgeInterval minutes
  * after reminderTime for up to 8 hours (or until end of day).
+ *
+ * Pass `extra` and `actionTypeId` to attach action buttons (habit reminders only).
  */
 export async function scheduleReminderNotification(
   notifId: number,
@@ -140,6 +219,8 @@ export async function scheduleReminderNotification(
   title: string,
   body: string,
   nudgeIntervalMinutes = 0,
+  extra?: Record<string, string>,
+  actionTypeId?: string,
 ) {
   if (!isNative()) return;
 
@@ -149,7 +230,7 @@ export async function scheduleReminderNotification(
   if (nudgeIntervalMinutes <= 0) {
     const at = nextOccurrence(hour, minute);
     await LocalNotifications.schedule({
-      notifications: [{ id: notifId, title, body, schedule: { at, allowWhileIdle: true } }],
+      notifications: [{ id: notifId, title, body, schedule: { at, allowWhileIdle: true }, extra, actionTypeId }],
     });
   } else {
     // Schedule the initial + nudge notifications for today (up to 8 nudges)
@@ -161,7 +242,14 @@ export async function scheduleReminderNotification(
       const m = totalMinutes % 60;
       if (h >= 24) break;
       const at = nextOccurrence(h, m);
-      notifications.push({ id: notifId + i, title: i === 0 ? title : `📳 ${title}`, body, schedule: { at, allowWhileIdle: true } });
+      notifications.push({
+        id: notifId + i,
+        title: i === 0 ? title : `📳 ${title}`,
+        body,
+        schedule: { at, allowWhileIdle: true },
+        extra,
+        actionTypeId,
+      });
     }
     await LocalNotifications.schedule({ notifications });
   }
