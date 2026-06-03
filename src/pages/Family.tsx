@@ -68,6 +68,7 @@ export default function Family() {
     family, familyMembers, kidProfiles, loading, error, isOwner,
     createFamily, joinFamily, generateInviteCode, updateFamily,
     addKidProfile, updateKidProfile, removeKidProfile, updateFamilyMember,
+    deleteFamily,
   } = useFamilyContext();
   const { user, signOut } = useAuthContext();
   const { resetAllTasks } = useTaskContext();
@@ -78,6 +79,8 @@ export default function Family() {
   const [resetConfirm, setResetConfirm] = useState<'tasks' | 'habits' | 'rewards' | null>(null);
   const [resetting, setResetting] = useState(false);
   const [resetDone, setResetDone] = useState<string | null>(null);
+  const [deleteFamilyConfirm, setDeleteFamilyConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const handleReset = async (type: 'tasks' | 'habits' | 'rewards') => {
     setResetting(true);
@@ -87,6 +90,14 @@ export default function Family() {
     setResetConfirm(null);
     setResetDone(type);
     setTimeout(() => setResetDone(null), 3000);
+  };
+
+  const handleDeleteFamily = async () => {
+    setDeleting(true);
+    const result = await deleteFamily();
+    setDeleting(false);
+    setDeleteFamilyConfirm(false);
+    if (result.error) showToast('Could not delete family. Please try again.', 'error');
   };
 
   const location = useLocation();
@@ -267,6 +278,50 @@ export default function Family() {
             toast.type === 'error' ? 'bg-rose' : 'bg-green'
           }`}>
             {toast.msg}
+          </div>
+        </div>
+      )}
+
+      {/* Delete Family Warning Overlay */}
+      {deleteFamilyConfirm && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md p-6 space-y-4">
+            <div className="text-center space-y-2">
+              <div className="text-4xl">⚠️</div>
+              <h2 className="text-xl font-extrabold text-ink">Delete Family?</h2>
+              <p className="text-sm text-ink-4">This will permanently delete everything in your family:</p>
+            </div>
+            <div className="bg-rose/5 border border-rose/20 rounded-xl p-4 space-y-2.5">
+              {[
+                '📋 All tasks',
+                '🎯 All habits and completion history',
+                '🎁 All rewards, points, and redemptions',
+                '🛒 All grocery items',
+                '👶 All kid profiles',
+              ].map((item) => (
+                <div key={item} className="flex items-center gap-2 text-sm text-rose font-medium">
+                  <span className="text-rose/50 font-bold">✕</span>
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-ink-4 text-center font-semibold">This action cannot be undone.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteFamilyConfirm(false)}
+                disabled={deleting}
+                className="flex-1 py-3 border-2 border-line text-ink-2 font-bold rounded-xl text-sm disabled:opacity-40"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => void handleDeleteFamily()}
+                disabled={deleting}
+                className="flex-1 py-3 bg-rose text-white font-bold rounded-xl text-sm disabled:opacity-50"
+              >
+                {deleting ? 'Deleting…' : 'Delete Everything'}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -592,6 +647,21 @@ export default function Family() {
                   </div>
                 )}
               </div>
+              {/* Danger Zone */}
+              {isOwner && (
+                <div className="bg-white rounded-2xl border border-rose/20 shadow-sm p-4">
+                  <h2 className="text-xs font-bold text-rose/50 uppercase tracking-wider mb-1">Danger Zone</h2>
+                  <p className="text-xs text-ink-4 mb-3">
+                    Deletes this family and all its data. Use this if you want to join a partner's family instead.
+                  </p>
+                  <button
+                    onClick={() => setDeleteFamilyConfirm(true)}
+                    className="w-full py-2.5 border-2 border-rose/40 text-rose font-bold rounded-xl hover:bg-rose/5 transition-colors text-sm"
+                  >
+                    Delete Family
+                  </button>
+                </div>
+              )}
             </>
           )}
         </div>

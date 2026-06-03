@@ -27,6 +27,7 @@ type FamilyContextValue = {
   addKidProfile: (name: string, color: string) => Promise<{ data?: KidProfile; error?: any }>;
   updateKidProfile: (id: string, updates: Partial<KidProfile>) => Promise<{ data?: KidProfile; error?: any }>;
   removeKidProfile: (id: string) => Promise<{ success?: boolean; error?: any }>;
+  deleteFamily: () => Promise<{ error?: any }>;
   refreshFamilyData: () => Promise<void>;
 };
 
@@ -124,28 +125,9 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
           const kids = await fetchKidProfiles(ownedFamily.id);
           setKidProfiles(kids);
         } else {
-          // Auto-create a personal family so the app works immediately after signup
-          const invite_code = generateInviteCodeValue();
-          const { data: newFamily, error: createError } = await supabase
-            .from('families')
-            .insert([{ name: 'My Home', owner_id: user.id, invite_code }])
-            .select()
-            .single();
-
-          if (!createError && newFamily) {
-            const fam = newFamily as Family;
-            await supabase
-              .from('family_members')
-              .insert([{ user_id: user.id, family_id: fam.id, role: 'owner' }]);
-            const members = await fetchFamilyMembers(fam.id);
-            setFamily(fam);
-            setFamilyMembers(members);
-            setKidProfiles([]);
-          } else {
-            setFamily(null);
-            setFamilyMembers([]);
-            setKidProfiles([]);
-          }
+          setFamily(null);
+          setFamilyMembers([]);
+          setKidProfiles([]);
         }
       }
     } catch (err) {
@@ -390,6 +372,19 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
     return { success: true };
   };
 
+  const deleteFamily = async (): Promise<{ error?: any }> => {
+    if (!family) return { error: new Error('No family') };
+    const { error: deleteError } = await supabase
+      .from('families')
+      .delete()
+      .eq('id', family.id);
+    if (deleteError) return { error: deleteError };
+    setFamily(null);
+    setFamilyMembers([]);
+    setKidProfiles([]);
+    return {};
+  };
+
   const ratingConfig: RatingOption[] = useMemo(
     () => family?.rating_config ?? DEFAULT_RATING_OPTIONS,
     [family]
@@ -433,6 +428,7 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
     addKidProfile,
     updateKidProfile,
     removeKidProfile,
+    deleteFamily,
     refreshFamilyData,
   };
 
