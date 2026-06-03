@@ -26,6 +26,7 @@ import FamilySettings from './pages/Family/Settings';
 import VoiceCapture from './pages/Voice/VoiceCapture';
 import TestVoice from './pages/Voice/TestVoice';
 import Onboarding, { ONBOARDING_KEY } from './pages/Onboarding';
+import GetStarted, { GET_STARTED_KEY } from './pages/GetStarted';
 
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -42,7 +43,16 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   if (!user) return <Navigate to="/login" />;
 
-  if (!localStorage.getItem(ONBOARDING_KEY) && location.pathname !== '/onboarding') {
+  const onboardingDone = !!localStorage.getItem(`${ONBOARDING_KEY}_${user.id}`);
+  // Existing users who completed onboarding before this screen existed are implicitly done
+  const getStartedDone = !!localStorage.getItem(`${GET_STARTED_KEY}_${user.id}`) || onboardingDone;
+
+  if (!getStartedDone && location.pathname !== '/get-started' && location.pathname !== '/join') {
+    const code = new URLSearchParams(location.search).get('code');
+    return <Navigate to={code ? `/get-started?code=${code}` : '/get-started'} />;
+  }
+
+  if (getStartedDone && !onboardingDone && location.pathname !== '/onboarding') {
     return <Navigate to="/onboarding" />;
   }
 
@@ -71,6 +81,7 @@ const AppRoutes = () => {
       <Route path="/voice-capture" element={<ProtectedRoute><VoiceCapture /></ProtectedRoute>} />
       <Route path="/test-voice" element={<ProtectedRoute><TestVoice /></ProtectedRoute>} />
       <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+      <Route path="/get-started" element={<ProtectedRoute><GetStarted /></ProtectedRoute>} />
       <Route path="/" element={<Navigate to="/home" />} />
     </Routes>
   );

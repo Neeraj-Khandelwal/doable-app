@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuthContext } from '../context/AuthContext';
 
 export const ONBOARDING_KEY = 'doable_onboarding_done';
 
@@ -65,12 +66,13 @@ const SLIDES = [
 export default function Onboarding() {
   const [current, setCurrent] = useState(0);
   const navigate = useNavigate();
+  const { user } = useAuthContext();
 
   const slide = SLIDES[current];
   const isLast = current === SLIDES.length - 1;
 
   const finish = () => {
-    localStorage.setItem(ONBOARDING_KEY, '1');
+    localStorage.setItem(`${ONBOARDING_KEY}_${user?.id}`, '1');
     navigate('/home');
   };
 

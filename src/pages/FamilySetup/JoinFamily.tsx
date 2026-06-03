@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthContext } from '../../context/AuthContext';
 import { useFamilyContext } from '../../context/FamilyContext';
+import { GET_STARTED_KEY } from '../GetStarted';
+import { ONBOARDING_KEY } from '../Onboarding';
 
 function classifyError(err: any, enteredEmail: string, userEmail?: string): string {
   const msg = err?.message ?? '';
@@ -71,7 +73,9 @@ export default function JoinFamily() {
     }
 
     setStatus('success');
-    setTimeout(() => navigate('/home'), 1800);
+    localStorage.setItem(`${GET_STARTED_KEY}_${user?.id}`, '1');
+    const destination = localStorage.getItem(`${ONBOARDING_KEY}_${user?.id}`) ? '/home' : '/onboarding';
+    setTimeout(() => navigate(destination), 1800);
   };
 
   if (status === 'success') {
@@ -125,10 +129,10 @@ export default function JoinFamily() {
           </button>
 
           <button
-            onClick={() => navigate('/family')}
+            onClick={() => navigate(localStorage.getItem(`${GET_STARTED_KEY}_${user?.id}`) ? '/family' : '/get-started')}
             className="w-full py-2 text-violet-600 hover:text-violet-700 font-semibold text-sm"
           >
-            Back to Family
+            {localStorage.getItem(`${GET_STARTED_KEY}_${user?.id}`) ? 'Back to Family' : 'Back'}
           </button>
         </div>
       </div>
