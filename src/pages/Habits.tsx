@@ -160,8 +160,8 @@ export default function Habits() {
                   .filter((c) => c.habit_id === habit.id && c.completed_by === activeTab)
                   .map((c) => c.date)
               )}
-              onComplete={async () => {
-                const result = await completeHabit(habit.id, activeTab);
+              onComplete={async (date: string) => {
+                const result = await completeHabit(habit.id, activeTab, date);
                 if (result.bonusAwarded) {
                   const kid = kidProfiles.find((k) => k.id === activeTab);
                   if (kid) fireForKids([kid.color]);

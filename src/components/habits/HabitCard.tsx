@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import type { Habit } from '../../utils/habitModels';
-import { CATEGORY_LABELS, CATEGORY_ICONS, FREQUENCY_LABELS, isScheduledToday, isScheduledForDay } from '../../utils/habitModels';
+import { CATEGORY_LABELS, CATEGORY_ICONS, FREQUENCY_LABELS, isScheduledToday, isScheduledForDay, todayStr } from '../../utils/habitModels';
 import type { KidProfile } from '../../utils/familyModels';
 
 const KID_COLOR_MAP: Record<string, string> = {
@@ -18,7 +19,7 @@ interface HabitCardProps {
   streak: number;
   kids: KidProfile[];
   completedDates?: Set<string>; // pre-filtered dates for this habit+assignee
-  onComplete: () => void;
+  onComplete: (date: string) => void;
   onUndo: () => void;
   onEdit: () => void;
 }
@@ -86,6 +87,26 @@ function CompletionDots({ count, target, color }: { count: number; target: numbe
 export default function HabitCard({ habit, assignee, todayCount, streak, kids, completedDates, onComplete, onUndo, onEdit }: HabitCardProps) {
   const isCompleted = todayCount >= habit.target_count;
   const scheduled = isScheduledToday(habit);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [customDate, setCustomDate] = useState('');
+
+  const yesterday = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().split('T')[0];
+  })();
+
+  const minDate = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return d.toISOString().split('T')[0];
+  })();
+
+  const handleDateSelect = (date: string) => {
+    onComplete(date);
+    setShowDatePicker(false);
+    setCustomDate('');
+  };
 
   const assigneeColor =
     assignee === 'me'
@@ -152,7 +173,7 @@ export default function HabitCard({ habit, assignee, todayCount, streak, kids, c
                 </button>
               ) : (
                 <button
-                  onClick={(e) => { e.stopPropagation(); onComplete(); }}
+                  onClick={(e) => { e.stopPropagation(); setShowDatePicker(true); }}
                   className="w-7 h-7 rounded-full border-2 flex items-center justify-center font-bold text-sm transition-all active:scale-90"
                   style={{ borderColor: assigneeColor, color: assigneeColor }}
                   aria-label="Complete habit"
@@ -170,6 +191,53 @@ export default function HabitCard({ habit, assignee, todayCount, streak, kids, c
       {/* 7-day strip for daily habits */}
       {habit.frequency === 'daily' && completedDates && (
         <WeekStrip habit={habit} completedDates={completedDates} accentColor={accentColor} />
+      )}
+
+      {/* Backdate picker */}
+      {showDatePicker && (
+        <div className="mt-3 pt-3 border-t border-gray-100 space-y-2">
+          <p className="text-xs font-semibold text-gray-500">Log for which day?</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => handleDateSelect(todayStr())}
+              className="flex-1 py-2 rounded-xl text-xs font-bold border-2 transition-all"
+              style={{ borderColor: assigneeColor, color: assigneeColor }}
+            >
+              Today
+            </button>
+            <button
+              onClick={() => handleDateSelect(yesterday)}
+              className="flex-1 py-2 rounded-xl text-xs font-bold border-2 border-gray-200 text-gray-600 hover:border-gray-400 transition-all"
+            >
+              Yesterday
+            </button>
+          </div>
+          <div className="flex gap-2 items-center">
+            <input
+              type="date"
+              value={customDate}
+              max={yesterday}
+              min={minDate}
+              onChange={(e) => setCustomDate(e.target.value)}
+              className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-xs text-gray-700 focus:outline-none focus:ring-2"
+              style={{ '--tw-ring-color': assigneeColor } as React.CSSProperties}
+            />
+            <button
+              onClick={() => customDate && handleDateSelect(customDate)}
+              disabled={!customDate}
+              className="px-3 py-2 rounded-xl text-xs font-bold text-white disabled:opacity-30 transition-all"
+              style={{ backgroundColor: assigneeColor }}
+            >
+              Log
+            </button>
+          </div>
+          <button
+            onClick={() => { setShowDatePicker(false); setCustomDate(''); }}
+            className="w-full py-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
       )}
     </div>
   );

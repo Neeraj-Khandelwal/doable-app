@@ -13,7 +13,7 @@ type HabitContextValue = {
   createHabit: (data: Partial<Habit>) => Promise<{ data?: Habit; error?: string }>;
   updateHabit: (id: string, updates: Partial<Habit>) => Promise<{ data?: Habit; error?: string }>;
   deleteHabit: (id: string) => Promise<{ error?: string }>;
-  completeHabit: (habitId: string, assignee: string) => Promise<{ error?: string; bonusAwarded?: boolean; streakMilestone?: number; bonusPoints?: number }>;
+  completeHabit: (habitId: string, assignee: string, date?: string) => Promise<{ error?: string; bonusAwarded?: boolean; streakMilestone?: number; bonusPoints?: number }>;
   undoComplete: (habitId: string, assignee: string) => Promise<{ error?: string }>;
   getTodayCount: (habitId: string, assignee: string) => number;
   getStreak: (habit: Habit, assignee: string) => number;
@@ -90,13 +90,13 @@ export const HabitProvider = ({ children }: { children: ReactNode }) => {
     return computeStreak(completions, assignee, habit);
   };
 
-  const completeHabit = async (habitId: string, assignee: string): Promise<{ error?: string; bonusAwarded?: boolean; streakMilestone?: number; bonusPoints?: number }> => {
+  const completeHabit = async (habitId: string, assignee: string, date?: string): Promise<{ error?: string; bonusAwarded?: boolean; streakMilestone?: number; bonusPoints?: number }> => {
     if (!family?.id) return { error: 'No family' };
-    const today = todayStr();
+    const logDate = date ?? todayStr();
 
     const { data, error: insertError } = await supabase
       .from('habit_completions')
-      .insert([{ habit_id: habitId, family_id: family.id, completed_by: assignee, date: today }])
+      .insert([{ habit_id: habitId, family_id: family.id, completed_by: assignee, date: logDate }])
       .select()
       .single();
 
@@ -120,7 +120,7 @@ export const HabitProvider = ({ children }: { children: ReactNode }) => {
           type: 'habit_completion',
           habit_id: habitId,
           created_by: user?.id ?? 'system',
-          event_date: today,
+          event_date: logDate,
         }]);
 
         // Streak bonus every N days
@@ -137,7 +137,7 @@ export const HabitProvider = ({ children }: { children: ReactNode }) => {
               type: 'streak_bonus',
               habit_id: habitId,
               created_by: user?.id ?? 'system',
-              event_date: today,
+              event_date: logDate,
             }]);
 
           if (!bonusErr) return { bonusAwarded: true, streakMilestone: cfg.streak_milestone, bonusPoints: cfg.streak_bonus_points };
