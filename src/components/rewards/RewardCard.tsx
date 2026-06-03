@@ -94,7 +94,7 @@ export default function RewardCard({ reward, kids, getBalance, onRedeem, onEdit,
             <p className="font-bold text-gray-900 text-sm leading-snug">{reward.title}</p>
             <div className="flex items-center gap-1.5 flex-shrink-0">
               <span className="text-xs font-extrabold text-amber bg-amber/15 px-2 py-0.5 rounded-full">
-                ⭐ {reward.points_cost} pts
+                ⭐ {reward.points_cost} points
               </span>
               {isOwner && (
                 <button
@@ -152,9 +152,9 @@ export default function RewardCard({ reward, kids, getBalance, onRedeem, onEdit,
                           color: canAfford ? 'white' : kidColor,
                           backgroundColor: canAfford ? kidColor : 'transparent',
                         }}
-                        title={canAfford ? `Redeem for ${kid.name}` : `${kid.name} needs ${reward.points_cost - balance} more pts`}
+                        title={canAfford ? `Redeem for ${kid.name}` : `${kid.name} needs ${reward.points_cost - balance} more points`}
                       >
-                        {kid.name} ({balance}pts)
+                        {kid.name} ({balance} points)
                       </button>
                     )}
                   </div>

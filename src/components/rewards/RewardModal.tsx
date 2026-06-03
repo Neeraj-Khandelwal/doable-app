@@ -139,7 +139,7 @@ export default function RewardModal({ isOpen, onClose, onSave, onDelete, reward 
           <div className="mb-4">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Points Cost *
-              <span className="ml-2 font-bold text-amber">⭐ {effectivePoints} pts</span>
+              <span className="ml-2 font-bold text-amber">⭐ {effectivePoints} points</span>
             </label>
             <div className="grid grid-cols-4 gap-2 mb-2">
               {POINT_PRESETS.map((p) => (

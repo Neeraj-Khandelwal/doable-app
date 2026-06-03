@@ -44,7 +44,7 @@ export default function KidPointsCard({ kid, balance, earned, spent, onReset }: 
       {/* Points balance */}
       <div className="flex items-end gap-1">
         <span className="text-3xl font-extrabold text-gray-900">{Math.max(0, balance)}</span>
-        <span className="text-sm text-gray-500 mb-1">pts</span>
+        <span className="text-sm text-gray-500 mb-1">points</span>
       </div>
 
       {/* Earned / spent breakdown */}

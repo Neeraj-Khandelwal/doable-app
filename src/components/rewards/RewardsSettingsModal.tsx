@@ -149,7 +149,7 @@ export default function RewardsSettingsModal({
                     onChange={(e) => setCompletionPts(e.target.value)}
                     className="w-24 px-3 py-2.5 border border-line rounded-xl text-sm text-center font-bold text-ink focus:outline-none focus:ring-2 focus:ring-amber bg-gray-50"
                   />
-                  <span className="text-sm text-ink-3">pts each time a kid completes a habit</span>
+                  <span className="text-sm text-ink-3">points each time a kid completes a habit</span>
                 </div>
               </div>
 
@@ -175,13 +175,13 @@ export default function RewardsSettingsModal({
                     onChange={(e) => setStreakBonus(e.target.value)}
                     className="w-24 px-3 py-2.5 border border-line rounded-xl text-sm text-center font-bold text-ink focus:outline-none focus:ring-2 focus:ring-amber bg-gray-50"
                   />
-                  <span className="text-sm text-ink-3">bonus pts awarded at streak</span>
+                  <span className="text-sm text-ink-3">bonus points awarded at streak</span>
                 </div>
               </div>
 
               <div className="bg-amber/10 rounded-xl px-4 py-3 text-sm text-amber font-medium space-y-1">
-                <p>🔥 Complete a habit → <strong>+{completionPts || '?'} pt{Number(completionPts) !== 1 ? 's' : ''}</strong></p>
-                <p>⭐ {streakDays || '?'}-day streak → <strong>+{streakBonus || '?'} bonus pt{Number(streakBonus) !== 1 ? 's' : ''}</strong></p>
+                <p>🔥 Complete a habit → <strong>+{completionPts || '?'} point{Number(completionPts) !== 1 ? 's' : ''}</strong></p>
+                <p>⭐ {streakDays || '?'}-day streak → <strong>+{streakBonus || '?'} bonus point{Number(streakBonus) !== 1 ? 's' : ''}</strong></p>
               </div>
 
               {habitError && <p className="text-xs text-rose font-medium">{habitError}</p>}
@@ -268,7 +268,7 @@ export default function RewardsSettingsModal({
                         </button>
                       </div>
                       <span className={`text-xs font-semibold ${opt.points >= 0 ? 'text-mint' : 'text-rose'}`}>
-                        {opt.points >= 0 ? '+' : ''}{opt.points} pts
+                        {opt.points >= 0 ? '+' : ''}{opt.points} points
                       </span>
                     </div>
 

@@ -209,7 +209,7 @@ export default function Rewards() {
           <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
             <h2 className="text-lg font-bold text-gray-900">Reset points for {resetKid.name}</h2>
             <p className="text-sm text-gray-500">
-              Current balance: <strong>{getBalance(resetKid.id)} pts</strong>
+              Current balance: <strong>{getBalance(resetKid.id)} points</strong>
             </p>
             <p className="text-sm text-gray-600">What do you want to reset?</p>
             <div className="space-y-2">
@@ -366,7 +366,7 @@ export default function Rewards() {
                               {hasImage && <span className="ml-1 text-lavender">· tap image to expand</span>}
                             </p>
                           </div>
-                          <span className="text-xs font-bold text-rose">−{r.points_spent} pts</span>
+                          <span className="text-xs font-bold text-rose">−{r.points_spent} points</span>
                         </div>
                       );
                     })}

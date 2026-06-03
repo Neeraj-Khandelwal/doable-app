@@ -261,7 +261,7 @@ export default function GivePointsModal({ isOpen, onClose, kids, defaultKidId, u
               className="mb-6 p-3 rounded-xl text-center text-sm font-semibold"
               style={{ backgroundColor: `${kidColor}15`, color: kidColor }}
             >
-              {mode === '+' ? '+' : '−'}{amount} pts → {selectedKid.name}
+              {mode === '+' ? '+' : '−'}{amount} points → {selectedKid.name}
               {reason ? ` · "${reason}"` : ''}
               {photoDataUrl ? ' · 📷' : ''}
             </div>
@@ -278,7 +278,7 @@ export default function GivePointsModal({ isOpen, onClose, kids, defaultKidId, u
           >
             {saving
               ? (photoBlob ? 'Uploading photo…' : 'Saving…')
-              : mode === '+' ? `Give ${amount || '?'} pts` : `Deduct ${amount || '?'} pts`}
+              : mode === '+' ? `Give ${amount || '?'} points` : `Deduct ${amount || '?'} points`}
           </button>
         </div>
       </div>

@@ -130,7 +130,7 @@ export default function RatingConfigModal({ isOpen, onClose, currentOptions, onS
                     </button>
                   </div>
                   <span className={`text-xs font-semibold ${opt.points >= 0 ? 'text-mint' : 'text-rose'}`}>
-                    {opt.points >= 0 ? '+' : ''}{opt.points} pts
+                    {opt.points >= 0 ? '+' : ''}{opt.points} points
                   </span>
                 </div>
 

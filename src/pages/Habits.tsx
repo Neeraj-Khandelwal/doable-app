@@ -83,7 +83,7 @@ export default function Habits() {
         return kid ? (
           <div className="fixed top-4 left-0 right-0 flex justify-center z-50 pointer-events-none">
             <div className="bg-amber text-white px-5 py-3 rounded-2xl shadow-xl font-bold text-sm flex items-center gap-2 animate-bounce">
-              🔥 {kid.name} earned +{bonusInfo.points} bonus pts for a {bonusInfo.milestone}-day streak!
+              🔥 {kid.name} earned +{bonusInfo.points} bonus points for a {bonusInfo.milestone}-day streak!
             </div>
           </div>
         ) : null;

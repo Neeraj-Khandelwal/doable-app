@@ -102,7 +102,7 @@ export default function RatingModal({ isOpen, onClose, onConfirm, task, kids }: 
                         {opt.type}
                       </span>
                       <span className={`text-xs font-bold ${opt.points >= 0 ? 'text-mint' : 'text-rose'}`}>
-                        {opt.points >= 0 ? '+' : ''}{opt.points} pts
+                        {opt.points >= 0 ? '+' : ''}{opt.points} points
                       </span>
                     </button>
                   );

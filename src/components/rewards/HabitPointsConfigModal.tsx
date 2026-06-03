@@ -81,7 +81,7 @@ export default function HabitPointsConfigModal({ isOpen, onClose, current, onSav
               onChange={(e) => setCompletionPts(e.target.value)}
               className="w-24 px-3 py-2.5 border border-line rounded-xl text-sm text-center font-bold text-ink focus:outline-none focus:ring-2 focus:ring-lavender bg-gray-50"
             />
-            <span className="text-sm text-ink-3">pts each time a kid completes a habit</span>
+            <span className="text-sm text-ink-3">points each time a kid completes a habit</span>
           </div>
         </div>
 
@@ -117,14 +117,14 @@ export default function HabitPointsConfigModal({ isOpen, onClose, current, onSav
               onChange={(e) => setStreakBonus(e.target.value)}
               className="w-24 px-3 py-2.5 border border-line rounded-xl text-sm text-center font-bold text-ink focus:outline-none focus:ring-2 focus:ring-lavender bg-gray-50"
             />
-            <span className="text-sm text-ink-3">bonus pts awarded at streak</span>
+            <span className="text-sm text-ink-3">bonus points awarded at streak</span>
           </div>
         </div>
 
         {/* Preview */}
         <div className="bg-plum-soft rounded-xl px-4 py-3 text-sm text-lavender font-medium space-y-1">
-          <p>🔥 Complete a habit → <strong>+{completionPts || '?'} pt{Number(completionPts) !== 1 ? 's' : ''}</strong></p>
-          <p>⭐ {streakDays || '?'}-day streak → <strong>+{streakBonus || '?'} bonus pt{Number(streakBonus) !== 1 ? 's' : ''}</strong></p>
+          <p>🔥 Complete a habit → <strong>+{completionPts || '?'} point{Number(completionPts) !== 1 ? 's' : ''}</strong></p>
+          <p>⭐ {streakDays || '?'}-day streak → <strong>+{streakBonus || '?'} bonus point{Number(streakBonus) !== 1 ? 's' : ''}</strong></p>
         </div>
 
         {error && <p className="text-xs text-rose font-medium">{error}</p>}
