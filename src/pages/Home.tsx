@@ -25,7 +25,7 @@ export default function Home() {
   const { user } = useAuthContext();
   const { tasks, createTask, markComplete, rateAndComplete } = useTaskContext();
   const { habits } = useHabitContext();
-  const { kidProfiles, familyMembers } = useFamilyContext();
+  const { family, loading: familyLoading, kidProfiles, familyMembers } = useFamilyContext();
   const { items: groceryItems, addItem: addGroceryItem, togglePurchased } = useGroceryContext();
 
   const partner = useMemo(() => {
@@ -225,6 +225,33 @@ export default function Home() {
         </button>
         </div>
       </div>
+
+      {/* ── FAMILY SETUP PROMPT ── */}
+      {!familyLoading && !family && (
+        <div className="bg-lavender/10 border border-lavender/30 rounded-2xl p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">👨‍👩‍👧</span>
+            <div>
+              <p className="text-sm font-bold text-ink">Set up your family space</p>
+              <p className="text-xs text-ink-3">Create a family or join one with an invite code.</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => navigate('/family-setup')}
+              className="flex-1 py-2 bg-lavender text-white text-sm font-bold rounded-xl hover:opacity-90 active:scale-95 transition-all"
+            >
+              Create family
+            </button>
+            <button
+              onClick={() => navigate('/join')}
+              className="flex-1 py-2 border-2 border-lavender text-lavender text-sm font-bold rounded-xl hover:bg-lavender/10 active:scale-95 transition-all"
+            >
+              Join family
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── QUICK TASK CREATION ── */}
       <div className="bg-white rounded-2xl border border-line-soft shadow-sm p-4 space-y-3">
