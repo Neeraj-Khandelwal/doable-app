@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { Habit } from '../../utils/habitModels';
 import { CATEGORY_LABELS, CATEGORY_ICONS, FREQUENCY_LABELS, isScheduledToday, isScheduledForDay, todayStr } from '../../utils/habitModels';
 import type { KidProfile } from '../../utils/familyModels';
@@ -26,6 +26,8 @@ interface HabitCardProps {
 
 const DAY_ABBR = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
+const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
 function WeekStrip({ habit, completedDates, accentColor, onComplete, onUndo }: {
   habit: Habit;
   completedDates: Set<string>;
@@ -33,24 +35,49 @@ function WeekStrip({ habit, completedDates, accentColor, onComplete, onUndo }: {
   onComplete: (date: string) => void;
   onUndo: (date: string) => void;
 }) {
-  const days = Array.from({ length: 7 }, (_, i) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const days = Array.from({ length: 30 }, (_, i) => {
     const d = new Date();
-    d.setDate(d.getDate() - (6 - i)); // oldest on left, today on right
+    d.setDate(d.getDate() - (29 - i)); // oldest on left, today on right
     const dateStr = d.toISOString().split('T')[0];
     const dayOfWeek = d.getDay();
+    const dayOfMonth = d.getDate();
+    const month = d.getMonth();
     const scheduled = isScheduledForDay(habit, dayOfWeek);
     const completed = completedDates.has(dateStr);
-    const isToday = i === 6;
-    return { dateStr, dayOfWeek, scheduled, completed, isToday };
+    const isToday = i === 29;
+    const showMonthLabel = dayOfMonth === 1;
+    return { dateStr, dayOfWeek, dayOfMonth, month, scheduled, completed, isToday, showMonthLabel };
   });
 
+  // Scroll to today (rightmost) on mount
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
+    }
+  }, []);
+
   return (
-    <div className="flex gap-1 mt-3 pt-3 border-t border-gray-100 justify-between">
-      {days.map(({ dateStr, dayOfWeek, scheduled, completed, isToday }) => (
-        <div key={dateStr} className="flex flex-col items-center gap-1">
-          <span className={`text-[10px] font-medium ${isToday ? 'text-gray-700' : 'text-gray-400'}`}>
-            {DAY_ABBR[dayOfWeek]}
+    <div
+      ref={scrollRef}
+      className="flex gap-2 mt-3 pt-3 border-t border-gray-100 overflow-x-auto no-scrollbar"
+    >
+      {days.map(({ dateStr, dayOfWeek, dayOfMonth, month, scheduled, completed, isToday, showMonthLabel }) => (
+        <div key={dateStr} className="flex flex-col items-center gap-0.5 flex-shrink-0 w-7">
+          {/* Month label on 1st of month */}
+          <span className="text-[9px] font-bold text-lavender h-3 leading-3">
+            {showMonthLabel ? MONTH_ABBR[month] : ''}
           </span>
+          {/* Day abbreviation */}
+          <span className={`text-[10px] font-medium ${isToday ? 'text-gray-800 font-bold' : 'text-gray-400'}`}>
+            {isToday ? 'now' : DAY_ABBR[dayOfWeek]}
+          </span>
+          {/* Date number */}
+          <span className={`text-[9px] ${isToday ? 'text-gray-600 font-semibold' : 'text-gray-300'}`}>
+            {dayOfMonth}
+          </span>
+          {/* Circle */}
           {scheduled ? (
             <button
               onClick={(e) => {
@@ -61,6 +88,8 @@ function WeekStrip({ habit, completedDates, accentColor, onComplete, onUndo }: {
               style={{
                 backgroundColor: completed ? accentColor : `${accentColor}20`,
                 border: `1.5px solid ${completed ? accentColor : `${accentColor}40`}`,
+                outline: isToday ? `2px solid ${accentColor}` : 'none',
+                outlineOffset: '2px',
               }}
               aria-label={completed ? `Undo ${dateStr}` : `Complete for ${dateStr}`}
             >
@@ -200,8 +229,8 @@ export default function HabitCard({ habit, assignee, todayCount, streak, kids, c
         </div>
       </div>
 
-      {/* 7-day strip for daily habits */}
-      {habit.frequency === 'daily' && completedDates && (
+      {/* 30-day scrollable history strip */}
+      {completedDates && (
         <WeekStrip
           habit={habit}
           completedDates={completedDates}
