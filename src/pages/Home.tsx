@@ -163,8 +163,8 @@ export default function Home() {
     const trimmed = groceryInput.trim();
     if (!trimmed) { groceryInputRef.current?.focus(); return; }
     setGroceryInput('');
+    groceryInputRef.current?.focus(); // focus before await so keyboard never closes
     await addGroceryItem(trimmed);
-    groceryInputRef.current?.focus();
   };
 
   const unpurchasedGrocery = groceryItems.filter((i) => !i.is_purchased);

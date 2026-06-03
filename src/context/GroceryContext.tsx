@@ -215,11 +215,21 @@ export const GroceryProvider = ({ children }: { children: ReactNode }) => {
     if (!trimmed) return { error: 'Item name cannot be empty' };
     if (items.length >= MAX_GROCERY_ITEMS) return { error: `Maximum ${MAX_GROCERY_ITEMS} items reached` };
 
-    const { error: err } = await supabase
+    const { data: newItem, error: err } = await supabase
       .from('grocery_items')
-      .insert([{ family_id: family.id, list_id: activeListId, name: trimmed, added_by: user?.id ?? null }]);
+      .insert([{ family_id: family.id, list_id: activeListId, name: trimmed, added_by: user?.id ?? null }])
+      .select()
+      .single();
 
     if (err) return { error: err.message };
+
+    // Optimistic update: add with real ID so realtime deduplication skips it
+    if (newItem) {
+      setAllItems((prev) => {
+        if (prev.some((i) => i.id === (newItem as GroceryItem).id)) return prev;
+        return [...prev, newItem as GroceryItem];
+      });
+    }
     return {};
   };
 
