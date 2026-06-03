@@ -10,6 +10,7 @@ import FastingCard from '../components/fasting/FastingCard';
 import { CATEGORY_ICONS, isKidTask } from '../utils/taskModels';
 import type { Task } from '../utils/taskModels';
 import RatingModal from '../components/tasks/RatingModal';
+import TaskModal from '../components/tasks/TaskModal';
 import { isScheduledToday } from '../utils/habitModels';
 
 const KID_COLOR_MAP: Record<string, string> = {
@@ -23,7 +24,7 @@ const KID_COLOR_MAP: Record<string, string> = {
 
 export default function Home() {
   const { user } = useAuthContext();
-  const { tasks, createTask, markComplete, rateAndComplete } = useTaskContext();
+  const { tasks, createTask, updateTask, deleteTask, markComplete, rateAndComplete } = useTaskContext();
   const { habits } = useHabitContext();
   const { family, loading: familyLoading, kidProfiles, familyMembers } = useFamilyContext();
   const { items: groceryItems, addItem: addGroceryItem, togglePurchased } = useGroceryContext();
@@ -48,6 +49,8 @@ export default function Home() {
   const [saveError, setSaveError] = useState('');
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [ratingTask, setRatingTask] = useState<Task | null>(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleCompletePress = (task: Task) => {
@@ -63,6 +66,20 @@ export default function Home() {
       await rateAndComplete(ratingTask.id, ratings as any);
       setRatingTask(null);
     }
+  };
+
+  const handleEditSave = async (data: Partial<Task>) => {
+    if (!editingTask) return;
+    await updateTask(editingTask.id, data);
+    setEditModalOpen(false);
+    setEditingTask(null);
+  };
+
+  const handleEditDelete = async () => {
+    if (!editingTask) return;
+    await deleteTask(editingTask.id);
+    setEditModalOpen(false);
+    setEditingTask(null);
   };
 
   // Grocery quick-add
@@ -374,7 +391,10 @@ export default function Home() {
                   aria-label="Mark complete"
                 />
                 <span className="text-base flex-shrink-0">{CATEGORY_ICONS[task.category]}</span>
-                <div className="flex-1 min-w-0">
+                <button
+                  className="flex-1 min-w-0 text-left"
+                  onClick={() => { setEditingTask(task); setEditModalOpen(true); }}
+                >
                   <p className="text-sm font-semibold text-ink truncate">{task.title}</p>
                   {task.due_date && (
                     <p className={`text-xs mt-0.5 ${isOverdue ? 'text-rose font-semibold' : 'text-ink-4'}`}>
@@ -385,7 +405,7 @@ export default function Home() {
                       })}
                     </p>
                   )}
-                </div>
+                </button>
                 {priority !== 'medium' && (
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${priorityColors[priority]}`}>
                     {priority}
@@ -496,6 +516,16 @@ export default function Home() {
         onConfirm={handleRatingConfirm}
         task={ratingTask}
         kids={kidProfiles}
+      />
+
+      <TaskModal
+        isOpen={editModalOpen}
+        onClose={() => { setEditModalOpen(false); setEditingTask(null); }}
+        onSave={handleEditSave}
+        onDelete={handleEditDelete}
+        task={editingTask}
+        kids={kidProfiles}
+        partner={partner}
       />
     </div>
   );
