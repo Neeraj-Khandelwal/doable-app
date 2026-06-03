@@ -37,7 +37,10 @@ export default function Home() {
 
   const alarmCount =
     tasks.filter((t) => !!t.reminder_time && !t.completed_at).length +
-    habits.filter((h) => !!h.reminder_time && isScheduledToday(h)).length +
+    habits.filter((h) => isScheduledToday(h)).reduce((sum, h) => {
+      const count = h.reminder_times?.filter(Boolean).length || (h.reminder_time ? 1 : 0);
+      return sum + count;
+    }, 0) +
     tasks.filter((t) => t.assigned_to_user_id === user?.id && t.assignment_status === 'pending_acceptance').length;
   const navigate = useNavigate();
 

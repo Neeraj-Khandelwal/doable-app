@@ -186,16 +186,21 @@ export default function Alarms() {
       }));
 
     const habitItems: ReminderItem[] = habits
-      .filter((h) => !!h.reminder_time && isScheduledToday(h))
-      .map((h) => ({
-        id: h.id,
-        type: 'habit',
-        title: h.title,
-        icon: h.icon,
-        reminderTime: h.reminder_time!,
-        reminderType: 'notification',
-        isCompleted: getTodayCount(h.id, 'me') >= h.target_count,
-      }));
+      .filter((h) => isScheduledToday(h))
+      .flatMap((h) => {
+        const times = (h.reminder_times?.filter(Boolean).length ? h.reminder_times!.filter(Boolean) : (h.reminder_time ? [h.reminder_time] : []));
+        if (times.length === 0) return [];
+        const doneCount = getTodayCount(h.id, 'me');
+        return times.map((time, i) => ({
+          id: `${h.id}:${i}`,
+          type: 'habit' as const,
+          title: times.length > 1 ? `${h.title} (${i + 1}/${times.length})` : h.title,
+          icon: h.icon,
+          reminderTime: time,
+          reminderType: 'notification',
+          isCompleted: i < doneCount,
+        }));
+      });
 
     return [...taskItems, ...habitItems].sort((a, b) =>
       a.reminderTime.localeCompare(b.reminderTime)

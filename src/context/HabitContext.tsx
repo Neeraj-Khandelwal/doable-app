@@ -181,6 +181,7 @@ export const HabitProvider = ({ children }: { children: ReactNode }) => {
       target_count: data.target_count ?? 1,
       icon: data.icon ?? '✅',
       reminder_time: data.reminder_time ?? null,
+      reminder_times: data.reminder_times ?? null,
       is_active: true,
     };
 

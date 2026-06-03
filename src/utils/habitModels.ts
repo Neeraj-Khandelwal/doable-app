@@ -13,7 +13,8 @@ export interface Habit {
   frequency_days: number[] | null; // [0..6] Sun=0, for custom frequency
   target_count: number; // times to complete per scheduled day
   icon: string; // emoji
-  reminder_time: string | null; // HH:MM
+  reminder_time: string | null; // HH:MM — legacy single reminder
+  reminder_times: string[] | null; // one per repetition when target_count > 1
   is_active: boolean;
   created_at: string;
   updated_at: string;

@@ -37,7 +37,7 @@ export default function HabitModal({ isOpen, onClose, onSave, onDelete, habit, k
   const [frequencyDays, setFrequencyDays] = useState<number[]>([]);
   const [targetCount, setTargetCount] = useState(1);
   const [icon, setIcon] = useState('✅');
-  const [reminderTime, setReminderTime] = useState('');
+  const [reminderTimes, setReminderTimes] = useState<string[]>(['']);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
@@ -53,7 +53,13 @@ export default function HabitModal({ isOpen, onClose, onSave, onDelete, habit, k
       setFrequencyDays(habit.frequency_days ?? []);
       setTargetCount(habit.target_count);
       setIcon(habit.icon);
-      setReminderTime(habit.reminder_time ?? '');
+      // Load reminder times: prefer reminder_times array, fall back to single reminder_time
+      const loaded = habit.reminder_times?.length
+        ? habit.reminder_times
+        : [habit.reminder_time ?? ''];
+      // Ensure array length matches target_count
+      const padded = Array.from({ length: habit.target_count }, (_, i) => loaded[i] ?? '');
+      setReminderTimes(padded);
     } else {
       setTitle('');
       setDescription('');
@@ -63,7 +69,7 @@ export default function HabitModal({ isOpen, onClose, onSave, onDelete, habit, k
       setFrequencyDays([]);
       setTargetCount(1);
       setIcon('✅');
-      setReminderTime('');
+      setReminderTimes(['']);
     }
     setError('');
     setConfirmDelete(false);
@@ -88,6 +94,7 @@ export default function HabitModal({ isOpen, onClose, onSave, onDelete, habit, k
     setSaving(true);
     setError('');
     try {
+      const filledTimes = reminderTimes.map((t) => t.trim()).filter(Boolean);
       await onSave({
         title: title.trim(),
         description: description.trim() || null,
@@ -97,7 +104,8 @@ export default function HabitModal({ isOpen, onClose, onSave, onDelete, habit, k
         frequency_days: frequency === 'custom' ? frequencyDays : null,
         target_count: targetCount,
         icon,
-        reminder_time: reminderTime || null,
+        reminder_time: filledTimes[0] ?? null,
+        reminder_times: filledTimes.length > 0 ? filledTimes : null,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save. Please try again.');
@@ -276,7 +284,11 @@ export default function HabitModal({ isOpen, onClose, onSave, onDelete, habit, k
             <label className="block text-sm font-semibold text-gray-700 mb-2">Times per day</label>
             <div className="flex items-center gap-4">
               <button
-                onClick={() => setTargetCount((c) => Math.max(1, c - 1))}
+                onClick={() => {
+                  const next = Math.max(1, targetCount - 1);
+                  setTargetCount(next);
+                  setReminderTimes((prev) => prev.slice(0, next).concat(Array(Math.max(0, next - prev.length)).fill('')));
+                }}
                 disabled={targetCount <= 1}
                 className="w-9 h-9 rounded-full border-2 border-gray-200 text-gray-600 font-bold text-lg flex items-center justify-center disabled:opacity-30"
               >
@@ -284,7 +296,11 @@ export default function HabitModal({ isOpen, onClose, onSave, onDelete, habit, k
               </button>
               <span className="text-2xl font-bold text-gray-900 w-8 text-center">{targetCount}</span>
               <button
-                onClick={() => setTargetCount((c) => Math.min(5, c + 1))}
+                onClick={() => {
+                  const next = Math.min(5, targetCount + 1);
+                  setTargetCount(next);
+                  setReminderTimes((prev) => [...prev, ''].slice(0, next));
+                }}
                 disabled={targetCount >= 5}
                 className="w-9 h-9 rounded-full border-2 border-lavender text-lavender font-bold text-lg flex items-center justify-center disabled:opacity-30"
               >
@@ -296,15 +312,26 @@ export default function HabitModal({ isOpen, onClose, onSave, onDelete, habit, k
             </div>
           </div>
 
-          {/* Reminder */}
+          {/* Reminders — one per repetition */}
           <div className="mb-4">
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Reminder (optional)</label>
-            <input
-              type="time"
-              value={reminderTime}
-              onChange={(e) => setReminderTime(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-lavender bg-gray-50"
-            />
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              {targetCount === 1 ? 'Reminder (optional)' : `Reminders (optional, one per repetition)`}
+            </label>
+            <div className="space-y-2">
+              {reminderTimes.map((t, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  {targetCount > 1 && (
+                    <span className="text-xs font-semibold text-gray-400 w-6 flex-shrink-0">#{i + 1}</span>
+                  )}
+                  <input
+                    type="time"
+                    value={t}
+                    onChange={(e) => setReminderTimes((prev) => prev.map((v, j) => j === i ? e.target.value : v))}
+                    className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-lavender bg-gray-50"
+                  />
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Description */}
