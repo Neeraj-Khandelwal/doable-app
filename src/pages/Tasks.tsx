@@ -44,12 +44,12 @@ export default function Tasks() {
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [completedExpanded, setCompletedExpanded] = useState(false);
 
-  // Derive partner from family members
-  const partner = useMemo(() => {
-    const partnerMember = familyMembers.find((m) => m.user_id !== user?.id);
-    if (!partnerMember) return null;
-    return { userId: partnerMember.user_id, name: partnerMember.display_name ?? 'Partner' };
-  }, [familyMembers, user?.id]);
+  const adults = useMemo(() =>
+    familyMembers
+      .filter((m) => m.user_id !== user?.id)
+      .map((m) => ({ userId: m.user_id, name: m.display_name ?? 'Family Member' })),
+    [familyMembers, user?.id]
+  );
 
   // Tasks where current user is the assignee and status is pending
   const incomingTasks = useMemo(() =>
@@ -149,8 +149,8 @@ export default function Tasks() {
 
   // Creator name for incoming task cards
   const getCreatorName = (task: Task) => {
-    if (task.created_by === partner?.userId) return partner.name;
-    return 'Someone';
+    const creator = adults.find((a) => a.userId === task.created_by);
+    return creator?.name ?? 'Someone';
   };
 
   if (!loading && !family) {
@@ -391,7 +391,7 @@ export default function Tasks() {
         onDelete={editingTask ? handleDelete : undefined}
         task={editingTask}
         kids={kidProfiles}
-        partner={partner}
+        adults={adults}
       />
 
       <RatingModal

@@ -29,11 +29,12 @@ export default function Home() {
   const { family, loading: familyLoading, kidProfiles, familyMembers } = useFamilyContext();
   const { items: groceryItems, addItem: addGroceryItem, togglePurchased } = useGroceryContext();
 
-  const partner = useMemo(() => {
-    const m = familyMembers.find((fm) => fm.user_id !== user?.id);
-    if (!m) return null;
-    return { userId: m.user_id, name: m.display_name ?? 'Partner' };
-  }, [familyMembers, user?.id]);
+  const adults = useMemo(() =>
+    familyMembers
+      .filter((m) => m.user_id !== user?.id)
+      .map((m) => ({ userId: m.user_id, name: m.display_name ?? 'Family Member' })),
+    [familyMembers, user?.id]
+  );
 
   const alarmCount =
     tasks.filter((t) => !!t.reminder_time && !t.completed_at).length +
@@ -47,7 +48,7 @@ export default function Home() {
   const [fullName, setFullName] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [assignees, setAssignees] = useState<string[]>(['me']);
-  const [partnerSelected, setPartnerSelected] = useState(false);
+  const [selectedAdultId, setSelectedAdultId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -126,7 +127,7 @@ export default function Home() {
     const first = (s: string) => s.split(' ')[0];
     const map: Record<string, string> = {};
     familyMembers.forEach((m) => {
-      map[m.user_id] = first(m.display_name ?? (m.role === 'owner' ? 'Owner' : 'Partner'));
+      map[m.user_id] = first(m.display_name ?? (m.role === 'owner' ? 'Owner' : 'Family Member'));
     });
     return (userId: string | null): string | undefined => {
       if (!userId) return undefined;
@@ -146,18 +147,18 @@ export default function Home() {
       inputRef.current?.focus();
       return;
     }
-    if (assignees.length === 0 && !partnerSelected) {
+    if (assignees.length === 0 && !selectedAdultId) {
       setSaveError('Select at least one assignee.');
       return;
     }
     setSaving(true);
     setSaveError('');
 
-    const payload: Parameters<typeof createTask>[0] = partnerSelected && partner
+    const payload: Parameters<typeof createTask>[0] = selectedAdultId
       ? {
           title: title.trim(),
           assignees: ['me'],
-          assigned_to_user_id: partner.userId,
+          assigned_to_user_id: selectedAdultId,
           is_private: true,
         }
       : {
@@ -172,7 +173,7 @@ export default function Home() {
     } else {
       setTitle('');
       setAssignees(['me']);
-      setPartnerSelected(false);
+      setSelectedAdultId(null);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2000);
     }
@@ -301,18 +302,19 @@ export default function Home() {
             >
               Me
             </button>
-            {partner && (
+            {adults.map((adult) => (
               <button
-                onClick={() => setPartnerSelected((p) => !p)}
+                key={adult.userId}
+                onClick={() => setSelectedAdultId((prev) => prev === adult.userId ? null : adult.userId)}
                 className={`px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-all ${
-                  partnerSelected
+                  selectedAdultId === adult.userId
                     ? 'bg-sky border-sky text-white'
                     : 'border-line text-ink-3 bg-white hover:border-sky hover:text-sky'
                 }`}
               >
-                {partner.name}
+                {adult.name}
               </button>
-            )}
+            ))}
             {kidProfiles.map((kid) => {
               const color = KID_COLOR_MAP[kid.color] ?? '#7C6FF0';
               const selected = assignees.includes(kid.id);
@@ -332,8 +334,8 @@ export default function Home() {
               );
             })}
           </div>
-          {partnerSelected && (
-            <p className="text-xs text-ink-4 mt-1.5">{partner?.name} will be notified and can accept or reject.</p>
+          {selectedAdultId && (
+            <p className="text-xs text-ink-4 mt-1.5">{adults.find((a) => a.userId === selectedAdultId)?.name} will be notified and can accept or reject.</p>
           )}
         </div>
 
@@ -528,7 +530,7 @@ export default function Home() {
         onDelete={handleEditDelete}
         task={editingTask}
         kids={kidProfiles}
-        partner={partner}
+        adults={adults}
       />
     </div>
   );

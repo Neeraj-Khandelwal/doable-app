@@ -4,7 +4,7 @@ import { TASK_CATEGORIES, NUDGE_INTERVALS, CATEGORY_ICONS, CATEGORY_LABELS } fro
 import type { KidProfile } from '../../utils/familyModels';
 import { TASK_TEMPLATES } from '../../utils/taskTemplates';
 
-interface Partner {
+interface AdultMember {
   userId: string;
   name: string;
 }
@@ -16,7 +16,7 @@ interface TaskModalProps {
   onDelete?: () => Promise<void>;
   task?: Task | null;
   kids: KidProfile[];
-  partner?: Partner | null;
+  adults?: AdultMember[];
 }
 
 const KID_COLOR_MAP: Record<string, string> = {
@@ -41,9 +41,10 @@ function nextWeekStr() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-type AdultAssignee = 'me' | 'partner' | 'family' | 'none';
+// 'me' | 'family' | 'none' are reserved; any other string is an adult's userId
+type AdultAssignee = string;
 
-export default function TaskModal({ isOpen, onClose, onSave, onDelete, task, kids, partner }: TaskModalProps) {
+export default function TaskModal({ isOpen, onClose, onSave, onDelete, task, kids, adults }: TaskModalProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [adultAssignee, setAdultAssignee] = useState<AdultAssignee>('me');
@@ -70,8 +71,9 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task, kid
       setTitle(task.title);
       setDescription(task.description ?? '');
       // Derive adult assignee from existing task fields
-      if (task.assigned_to_user_id && partner && task.assigned_to_user_id === partner.userId) {
-        setAdultAssignee('partner');
+      const matchedAdult = adults?.find((a) => a.userId === task.assigned_to_user_id);
+      if (task.assigned_to_user_id && matchedAdult) {
+        setAdultAssignee(matchedAdult.userId);
       } else if (!task.assignees.includes('me')) {
         setAdultAssignee('none');
       } else if (!task.is_private) {
@@ -108,7 +110,7 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task, kid
     setConfirmDelete(false);
     setActiveTemplate(null);
     setSaving(false);
-  }, [task, isOpen, partner]);
+  }, [task, isOpen, adults]);
 
   if (!isOpen) return null;
 
@@ -145,13 +147,14 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task, kid
     if (adultAssignee === 'me') {
       assignees.push('me');
       is_private = true;
-    } else if (adultAssignee === 'partner' && partner) {
-      assignees.push('me');
-      assigned_to_user_id = partner.userId;
-      is_private = true;
     } else if (adultAssignee === 'family') {
       assignees.push('me');
       is_private = false;
+    } else if (adultAssignee !== 'none') {
+      // adultAssignee is a userId
+      assignees.push('me');
+      assigned_to_user_id = adultAssignee;
+      is_private = true;
     }
     // 'none' = kids only, don't push 'me'
     kidAssignees.forEach((k) => assignees.push(k));
@@ -333,9 +336,9 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task, kid
             <div className="flex flex-wrap gap-2 mb-2">
               {([
                 { key: 'me', label: '🔒 Me (private)' },
-                ...(partner ? [{ key: 'partner', label: `👤 ${partner.name}` }] : []),
+                ...(adults ?? []).map((a) => ({ key: a.userId, label: `👤 ${a.name}` })),
                 { key: 'family', label: '👨‍👩‍👧 Family' },
-              ] as { key: AdultAssignee; label: string }[]).map((opt) => (
+              ] as { key: string; label: string }[]).map((opt) => (
                 <button
                   key={opt.key}
                   onClick={() => setAdultAssignee((prev) => prev === opt.key ? 'none' : opt.key)}
@@ -350,10 +353,10 @@ export default function TaskModal({ isOpen, onClose, onSave, onDelete, task, kid
               ))}
             </div>
 
-            {/* Partner info banner */}
-            {adultAssignee === 'partner' && (
+            {/* Adult assignee info banner */}
+            {adultAssignee !== 'me' && adultAssignee !== 'family' && adultAssignee !== 'none' && (
               <div className="mb-2 px-3 py-2 bg-lavender/10 border border-lavender/30 rounded-lg text-xs text-lavender">
-                {partner?.name} will be notified and can accept or reject this task.
+                {adults?.find((a) => a.userId === adultAssignee)?.name} will be notified and can accept or reject this task.
               </div>
             )}
 

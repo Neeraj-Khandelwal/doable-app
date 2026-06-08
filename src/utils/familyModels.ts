@@ -31,11 +31,21 @@ export interface Family {
   updated_at: string;
 }
 
+export type FamilyRelationship = 'partner' | 'parent' | 'sibling' | 'other';
+
+export const RELATIONSHIP_LABELS: Record<FamilyRelationship, string> = {
+  partner: 'Partner',
+  parent: 'Parent',
+  sibling: 'Sibling',
+  other: 'Family Member',
+};
+
 export interface FamilyMember {
   id: string;
   family_id: string;
   user_id: string;
   role: 'owner' | 'partner';
+  relationship: FamilyRelationship;
   display_name: string | null;
   joined_at: string;
 }

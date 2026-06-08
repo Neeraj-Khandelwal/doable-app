@@ -6,7 +6,8 @@ import { useTaskContext } from '../context/TaskContext';
 import { useHabitContext } from '../context/HabitContext';
 import { useRewardsContext } from '../context/RewardsContext';
 import { supabase } from '../supabaseClient';
-import type { FamilyColor } from '../utils/familyModels';
+import type { FamilyColor, FamilyRelationship } from '../utils/familyModels';
+import { RELATIONSHIP_LABELS } from '../utils/familyModels';
 import { useAppPermissions, type PermStatus } from '../hooks/useAppPermissions';
 
 type Tab = 'family' | 'account';
@@ -127,6 +128,7 @@ export default function Family() {
 
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [editMemberName, setEditMemberName] = useState('');
+  const [editMemberRelationship, setEditMemberRelationship] = useState<FamilyRelationship>('partner');
 
   const [editingFamilyName, setEditingFamilyName] = useState(false);
   const [familyNameDraft, setFamilyNameDraft] = useState('');
@@ -197,10 +199,17 @@ export default function Family() {
     setInviteSending(false);
   };
 
-  const handleSaveMemberName = async (memberId: string) => {
-    const result = await updateFamilyMember(memberId, { display_name: editMemberName.trim() || null });
-    if (result.error) showToast('Could not save name.', 'error');
-    else { showToast('Name saved!'); setEditingMemberId(null); setFullName(editMemberName.trim()); }
+  const handleSaveMember = async (memberId: string, isMyMember: boolean) => {
+    const result = await updateFamilyMember(memberId, {
+      display_name: editMemberName.trim() || null,
+      relationship: editMemberRelationship,
+    });
+    if (result.error) showToast('Could not save. Please try again.', 'error');
+    else {
+      showToast('Saved!');
+      setEditingMemberId(null);
+      if (isMyMember) setFullName(editMemberName.trim());
+    }
   };
 
   const handleAddKid = async () => {
@@ -485,8 +494,9 @@ export default function Family() {
                 <div className="space-y-2">
                   {familyMembers.map((member) => {
                     const isMe = member.user_id === user?.id;
-                    const canEdit = isMe;
-                    const label = member.display_name ?? (isMe ? 'You' : member.role === 'owner' ? 'Owner' : 'Partner');
+                    const canEdit = isMe || isOwner;
+                    const relationshipLabel = member.role === 'owner' ? 'Owner' : RELATIONSHIP_LABELS[member.relationship ?? 'partner'];
+                    const label = member.display_name ?? (isMe ? 'You' : relationshipLabel);
                     return (
                       <div key={member.id} className="flex flex-col gap-1 py-2 px-3 bg-bg-deep rounded-xl">
                         <div className="flex items-center gap-3">
@@ -496,34 +506,52 @@ export default function Family() {
                           <div className="flex-1">
                             <p className="text-sm font-semibold text-ink-2">{label}</p>
                             <p className="text-xs text-ink-4">
-                              {member.role === 'owner' ? 'Owner' : 'Partner'} · Joined {new Date(member.joined_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                              {relationshipLabel} · Joined {new Date(member.joined_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                             </p>
                             {isMe && !member.display_name && (
-                              <p className="text-xs text-amber mt-0.5">Set your name so your partner sees you correctly</p>
+                              <p className="text-xs text-amber mt-0.5">Set your name so other family members see you correctly</p>
                             )}
                           </div>
                           {canEdit && editingMemberId !== member.id && (
                             <button
-                              onClick={() => { setEditingMemberId(member.id); setEditMemberName(member.display_name ?? ''); }}
+                              onClick={() => {
+                                setEditingMemberId(member.id);
+                                setEditMemberName(member.display_name ?? '');
+                                setEditMemberRelationship(member.relationship ?? 'partner');
+                              }}
                               className="text-xs text-lavender font-semibold px-2 py-1 rounded-lg hover:bg-plum-soft transition-colors"
                             >
-                              {member.display_name ? 'Rename' : 'Set name'}
+                              {member.display_name ? 'Edit' : 'Set name'}
                             </button>
                           )}
                         </div>
                         {editingMemberId === member.id && (
-                          <div className="flex gap-2 mt-1">
+                          <div className="flex flex-col gap-2 mt-1">
                             <input
                               type="text"
                               value={editMemberName}
                               onChange={(e) => setEditMemberName(e.target.value)}
-                              onKeyDown={(e) => { if (e.key === 'Enter') void handleSaveMemberName(member.id); if (e.key === 'Escape') setEditingMemberId(null); }}
-                              placeholder="Your name (seen by your partner)"
+                              onKeyDown={(e) => { if (e.key === 'Escape') setEditingMemberId(null); }}
+                              placeholder="Name (seen by all family members)"
                               className="flex-1 px-3 py-2 border border-line rounded-xl text-sm text-ink placeholder-ink-4 focus:outline-none focus:ring-2 focus:ring-lavender bg-white"
                               autoFocus
                             />
-                            <button onClick={() => void handleSaveMemberName(member.id)} className="px-3 py-2 bg-lavender text-white rounded-xl text-sm font-bold hover:opacity-90">Save</button>
-                            <button onClick={() => setEditingMemberId(null)} className="px-3 py-2 border border-line rounded-xl text-sm text-ink-3 hover:bg-bg-deep">✕</button>
+                            {member.role !== 'owner' && (
+                              <select
+                                value={editMemberRelationship}
+                                onChange={(e) => setEditMemberRelationship(e.target.value as FamilyRelationship)}
+                                className="px-3 py-2 border border-line rounded-xl text-sm text-ink focus:outline-none focus:ring-2 focus:ring-lavender bg-white"
+                              >
+                                <option value="partner">Partner</option>
+                                <option value="parent">Parent</option>
+                                <option value="sibling">Sibling</option>
+                                <option value="other">Other (Family Member)</option>
+                              </select>
+                            )}
+                            <div className="flex gap-2">
+                              <button onClick={() => void handleSaveMember(member.id, isMe)} className="flex-1 px-3 py-2 bg-lavender text-white rounded-xl text-sm font-bold hover:opacity-90">Save</button>
+                              <button onClick={() => setEditingMemberId(null)} className="px-3 py-2 border border-line rounded-xl text-sm text-ink-3 hover:bg-bg-deep">✕</button>
+                            </div>
                           </div>
                         )}
                       </div>

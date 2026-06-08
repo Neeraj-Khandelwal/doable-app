@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useFamilyContext } from '../../context/FamilyContext';
 import { useTaskContext } from '../../context/TaskContext';
+import { useAuthContext } from '../../context/AuthContext';
 import { parseDeepLink } from '../../utils/deepLinkHandler';
 import { parseTaskText, findTaskByTitle } from '../../utils/taskParser';
 import TaskModal from '../../components/tasks/TaskModal';
@@ -10,8 +11,16 @@ import type { Task } from '../../utils/taskModels';
 export default function VoiceCapture() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { kidProfiles } = useFamilyContext();
+  const { kidProfiles, familyMembers } = useFamilyContext();
   const { createTask, markComplete, tasks } = useTaskContext();
+  const { user } = useAuthContext();
+
+  const adults = useMemo(() =>
+    familyMembers
+      .filter((m) => m.user_id !== user?.id)
+      .map((m) => ({ userId: m.user_id, name: m.display_name ?? 'Family Member' })),
+    [familyMembers, user?.id]
+  );
 
   const [modalOpen, setModalOpen] = useState(false);
   const [draftTask, setDraftTask] = useState<Partial<Task> | null>(null);
@@ -126,6 +135,7 @@ export default function VoiceCapture() {
           onSave={handleSave}
           task={draftTask as Task}
           kids={kidProfiles}
+          adults={adults}
         />
       )}
     </>
