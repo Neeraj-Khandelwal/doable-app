@@ -9,16 +9,35 @@ export interface AppPermissions {
   camera: PermStatus;
 }
 
-async function queryPermission(name: string): Promise<PermStatus> {
-  if (!navigator.permissions) return 'prompt';
-  try {
-    const status = await navigator.permissions.query({ name: name as PermissionName });
-    if (status.state === 'granted') return 'granted';
-    if (status.state === 'denied') return 'denied';
-    return 'prompt';
-  } catch {
-    return 'prompt';
+/**
+ * Check mic/camera status without activating hardware.
+ * 1. Try Permissions API (works on desktop Chrome/Firefox).
+ * 2. Fall back to enumerateDevices — device labels are non-empty only when
+ *    the permission is already granted. Reliable on Android Capacitor WebView
+ *    where navigator.permissions.query() always returns 'prompt'.
+ */
+async function queryMediaPermission(kind: 'microphone' | 'camera'): Promise<PermStatus> {
+  const permName = kind === 'microphone' ? 'microphone' : 'camera';
+  const deviceKind = kind === 'microphone' ? 'audioinput' : 'videoinput';
+
+  if (navigator.permissions) {
+    try {
+      const result = await navigator.permissions.query({ name: permName as PermissionName });
+      if (result.state === 'granted') return 'granted';
+      if (result.state === 'denied') return 'denied';
+    } catch { /* API unsupported on this platform */ }
   }
+
+  // Fallback: enumerateDevices — labels only populate after permission is granted
+  if (navigator.mediaDevices?.enumerateDevices) {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const hasLabel = devices.some((d) => d.kind === deviceKind && d.label !== '');
+      if (hasLabel) return 'granted';
+    } catch { /* ignore */ }
+  }
+
+  return 'prompt';
 }
 
 export function useAppPermissions() {
@@ -37,8 +56,8 @@ export function useAppPermissions() {
       notifRaw === 'denied' ? 'denied' : 'prompt';
 
     const [mic, cam] = await Promise.all([
-      queryPermission('microphone'),
-      queryPermission('camera'),
+      queryMediaPermission('microphone'),
+      queryMediaPermission('camera'),
     ]);
     setPermissions({ notifications: notif, microphone: mic, camera: cam });
   }, []);
@@ -50,19 +69,26 @@ export function useAppPermissions() {
     try {
       if (type === 'notifications') {
         await requestNotificationPermission();
+        await refresh();
       } else if (type === 'microphone') {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
           stream.getTracks().forEach((t) => t.stop());
-        } catch { /* denied */ }
+          // getUserMedia succeeded — permission is definitely granted
+          setPermissions((prev) => ({ ...prev, microphone: 'granted' }));
+        } catch {
+          await refresh(); // re-query to pick up 'denied' if blocked
+        }
       } else if (type === 'camera') {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ video: true });
           stream.getTracks().forEach((t) => t.stop());
-        } catch { /* denied */ }
+          setPermissions((prev) => ({ ...prev, camera: 'granted' }));
+        } catch {
+          await refresh();
+        }
       }
     } finally {
-      await refresh();
       setRequesting(null);
     }
   };
