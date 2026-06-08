@@ -323,7 +323,7 @@ export default function Alarms() {
         void cancelReminderNotification(idFromUuid(item.id), item.nudgeInterval ?? 0);
         return;
       }
-      const notifExtra = item.type === 'habit'
+      const notifExtra: Record<string, string> = item.type === 'habit'
         ? { type: 'habit', habitId: item.id.split(':')[0], assignee: 'me', familyId: family?.id ?? '' }
         : { type: 'task', taskId: item.id, familyId: family?.id ?? '' };
       const actionTypeId = item.type === 'habit' ? HABIT_ACTION_TYPE_ID : TASK_ACTION_TYPE_ID;
