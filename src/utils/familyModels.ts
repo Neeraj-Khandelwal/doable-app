@@ -45,7 +45,7 @@ export interface FamilyMember {
   family_id: string;
   user_id: string;
   role: 'owner' | 'partner';
-  relationship: FamilyRelationship;
+  relationship?: FamilyRelationship;
   display_name: string | null;
   joined_at: string;
 }
