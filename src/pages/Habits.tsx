@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useHabitContext } from '../context/HabitContext';
 import { useFamilyContext } from '../context/FamilyContext';
+import { useAuthContext } from '../context/AuthContext';
 import { useRewardsContext } from '../context/RewardsContext';
 import { useConfetti } from '../hooks/useConfetti';
 import type { Habit } from '../utils/habitModels';
@@ -12,6 +13,7 @@ export default function Habits() {
   const { habits, completions, loading, error, createHabit, updateHabit, deleteHabit, completeHabit, undoComplete, getTodayCount, getStreak } =
     useHabitContext();
   const { family, kidProfiles } = useFamilyContext();
+  const { user } = useAuthContext();
   const { refreshRewards } = useRewardsContext();
   const { fireForKids } = useConfetti();
   const navigate = useNavigate();
@@ -27,7 +29,11 @@ export default function Habits() {
     ...kidProfiles.map((k) => ({ key: k.id, label: k.name })),
   ];
 
-  const visibleHabits = habits.filter((h) => h.assignees.includes(activeTab));
+  const visibleHabits = habits.filter((h) =>
+    activeTab === 'me'
+      ? h.assignees.includes('me') && h.created_by === user?.id
+      : h.assignees.includes(activeTab)
+  );
 
   const handleEdit = (habit: Habit) => {
     setEditingHabit(habit);

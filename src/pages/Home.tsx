@@ -104,7 +104,7 @@ export default function Home() {
 
   // Active tasks assigned to me, overdue first, max 5
   const myActiveTasks = tasks
-    .filter((t) => !t.completed_at && t.assignees.includes('me'))
+    .filter((t) => !t.completed_at && t.assignees.includes('me') && t.created_by === user?.id)
     .sort((a, b) => {
       if (a.is_overdue && !b.is_overdue) return -1;
       if (!a.is_overdue && b.is_overdue) return 1;
@@ -421,12 +421,12 @@ export default function Home() {
           })
         )}
 
-        {tasks.filter((t) => !t.completed_at && t.assignees.includes('me')).length > 5 && (
+        {tasks.filter((t) => !t.completed_at && t.assignees.includes('me') && t.created_by === user?.id).length > 5 && (
           <button
             onClick={() => navigate('/tasks')}
             className="w-full pt-1 text-xs text-ink-4 hover:text-lavender text-center transition-colors"
           >
-            +{tasks.filter((t) => !t.completed_at && t.assignees.includes('me')).length - 5} more tasks →
+            +{tasks.filter((t) => !t.completed_at && t.assignees.includes('me') && t.created_by === user?.id).length - 5} more tasks →
           </button>
         )}
       </div>

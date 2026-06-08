@@ -130,7 +130,7 @@ export default function Tasks() {
     if (assigneeFilter === 'all') return filteredTasks;
     if (assigneeFilter === 'me') {
       return filteredTasks.filter(
-        (t) => t.assignees.includes('me') || t.assigned_to_user_id === user?.id
+        (t) => (t.assignees.includes('me') && t.created_by === user?.id) || t.assigned_to_user_id === user?.id
       );
     }
     return filteredTasks.filter((t) => t.assignees.includes(assigneeFilter));
