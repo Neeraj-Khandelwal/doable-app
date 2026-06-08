@@ -29,6 +29,7 @@ type TaskContextValue = {
   rateAndComplete: (id: string, ratings: { kid_id: string; rating_type: RatingType }[]) => Promise<{ error?: string }>;
   acceptTask: (id: string) => Promise<{ error?: string }>;
   rejectTask: (id: string, reason: string) => Promise<{ error?: string }>;
+  undoComplete: (id: string) => Promise<{ error?: string }>;
   refreshTasks: () => Promise<void>;
   resetAllTasks: () => Promise<{ error?: string }>;
 };
@@ -321,6 +322,10 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  const undoComplete = async (id: string) => {
+    return updateTask(id, { completed_at: null, completed_by: null, ratings: [] }).then((r) => ({ error: r.error }));
+  };
+
   const acceptTask = async (id: string) => {
     return updateTask(id, {
       assignment_status: 'accepted',
@@ -348,6 +353,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     deleteTask,
     markComplete,
     rateAndComplete,
+    undoComplete,
     acceptTask,
     rejectTask,
     refreshTasks: fetchTasks,

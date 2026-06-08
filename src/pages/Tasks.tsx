@@ -29,7 +29,7 @@ const KID_COLOR_MAP: Record<string, string> = {
 };
 
 export default function Tasks() {
-  const { filteredTasks, tasks, loading, error, filter, setFilter, createTask, updateTask, deleteTask, markComplete, rateAndComplete, acceptTask, rejectTask } = useTaskContext();
+  const { filteredTasks, tasks, loading, error, filter, setFilter, createTask, updateTask, deleteTask, markComplete, rateAndComplete, undoComplete, acceptTask, rejectTask } = useTaskContext();
   const { family, kidProfiles, familyMembers } = useFamilyContext();
   const { user } = useAuthContext();
 
@@ -42,6 +42,7 @@ export default function Tasks() {
   const [ratingTask, setRatingTask] = useState<Task | null>(null);
   const [assigneeFilter, setAssigneeFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [completedExpanded, setCompletedExpanded] = useState(false);
 
   // Derive partner from family members
   const partner = useMemo(() => {
@@ -338,20 +339,33 @@ export default function Tasks() {
 
           {doneTasks.length > 0 && filter !== 'active' && (
             <>
-              <div className="flex items-center gap-2 pt-2">
-                <div className="flex-1 h-px bg-line" />
-                <span className="text-xs text-ink-4 font-medium">
-                  Completed ({doneTasks.length})
-                </span>
-                <div className="flex-1 h-px bg-line" />
-              </div>
-              {doneTasks.map((task) => (
+              {filter === 'done' ? (
+                <div className="flex items-center gap-2 pt-2">
+                  <div className="flex-1 h-px bg-line" />
+                  <span className="text-xs text-ink-4 font-medium">Completed ({doneTasks.length})</span>
+                  <div className="flex-1 h-px bg-line" />
+                </div>
+              ) : (
+                <button
+                  onClick={() => setCompletedExpanded((v) => !v)}
+                  className="flex items-center gap-2 pt-2 w-full"
+                >
+                  <div className="flex-1 h-px bg-line" />
+                  <span className="text-xs text-ink-4 font-medium flex items-center gap-1">
+                    Completed ({doneTasks.length})
+                    <span className="text-ink-4">{completedExpanded ? '▲' : '▼'}</span>
+                  </span>
+                  <div className="flex-1 h-px bg-line" />
+                </button>
+              )}
+              {(filter === 'done' || completedExpanded) && doneTasks.map((task) => (
                 <TaskCard
                   key={task.id}
                   task={task}
                   kids={kidProfiles}
                   currentUserId={user?.id}
                   onComplete={handleCompletePress}
+                  onUndo={(id) => void undoComplete(id)}
                   onEdit={handleEdit}
                   onDelete={(id) => void deleteTask(id)}
                 />

@@ -7,6 +7,7 @@ interface TaskCardProps {
   kids: KidProfile[];
   currentUserId?: string;
   onComplete: (task: Task) => void;
+  onUndo?: (id: string) => void;
   onEdit: (task: Task) => void;
   onDelete: (id: string) => void;
   onReassign?: (task: Task) => void;
@@ -52,7 +53,7 @@ function formatDueDate(due: string | null, overdue: boolean): { label: string; c
   };
 }
 
-export default function TaskCard({ task, kids, currentUserId, onComplete, onEdit, onDelete, onReassign }: TaskCardProps) {
+export default function TaskCard({ task, kids, currentUserId, onComplete, onUndo, onEdit, onDelete, onReassign }: TaskCardProps) {
   const priority = PRIORITY_STYLES[task.priority];
   const due = formatDueDate(task.due_date, task.is_overdue);
   const done = !!task.completed_at;
@@ -199,15 +200,27 @@ export default function TaskCard({ task, kids, currentUserId, onComplete, onEdit
           )}
         </div>
 
-        {/* Delete button — only for non-rejected, non-pending creator tasks */}
-        {!done && !isPending && !isRejected && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
-            className="text-gray-300 hover:text-rose transition-colors flex-shrink-0 text-lg leading-none"
-            aria-label="Delete task"
-          >
-            ×
-          </button>
+        {/* Action button — undo for done tasks, delete for active tasks */}
+        {!isPending && !isRejected && (
+          done ? (
+            onUndo && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onUndo(task.id); }}
+                className="text-gray-300 hover:text-lavender transition-colors flex-shrink-0 text-base leading-none"
+                aria-label="Undo completion"
+              >
+                ↩
+              </button>
+            )
+          ) : (
+            <button
+              onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
+              className="text-gray-300 hover:text-rose transition-colors flex-shrink-0 text-lg leading-none"
+              aria-label="Delete task"
+            >
+              ×
+            </button>
+          )
         )}
       </div>
     </div>
