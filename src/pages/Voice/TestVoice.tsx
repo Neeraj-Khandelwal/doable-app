@@ -62,22 +62,23 @@ export default function VoiceTaskScreen() {
 
     const r = new SpeechAPI();
     r.lang = 'en-US';
-    r.continuous = true;       // keep listening until user taps stop
+    r.continuous = false;      // single-phrase mode — far more reliable on Android
     r.interimResults = true;   // show live transcript as user speaks
     r.maxAlternatives = 1;
     recognitionRef.current = r;
 
     let finalText = '';
+    let maxFinalIndex = -1;    // guard against Android re-delivering old results
 
     r.onresult = (e) => {
-      // Only process results from resultIndex onward — starting from 0 would
-      // re-add already-finalized segments and duplicate the transcript.
       let interim = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (i <= maxFinalIndex) continue; // skip already-committed results
         const result = e.results[i];
         if (result[0]) {
           if (result.isFinal) {
             finalText += result[0].transcript + ' ';
+            maxFinalIndex = i;
           } else {
             interim = result[0].transcript;
           }
