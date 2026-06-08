@@ -5,10 +5,10 @@
 
 | **Field** | **Value** |
 |-----------|-----------|
-| **Version** | 2.3 — Permissions, Data Reset, Leaderboard Polish, Voice Fix, Habit Strip |
-| **Date** | May 20, 2026 |
+| **Version** | 2.4 — Tappable Habit History, Password Visibility, Points Wording, Notification Actions, Recurring Fix, v1.2.0 |
+| **Date** | June 3, 2026 |
 | **Platform** | Android (Google Play Store) + Vercel Web |
-| **Status** | Active Development — Phases 1–20 Complete + Enhancements — Closed Testing |
+| **Status** | Active Development — Phases 1–20 Complete + Enhancements — v1.2.0 on Play Store |
 | **Author** | Personal Learning Project |
 | **Built with** | React + TypeScript + Vite + Tailwind CSS v4 + Supabase + Capacitor + EAS Build |
 
@@ -38,6 +38,7 @@ The app is designed for a family of up to 6 members: 2 parents and up to 4 kids.
 - **Phase 14 ✅:** Adult-to-adult task assignment with accept/reject workflow + personal task privacy
 - **Phases 15–20 ✅:** Partner display name, task templates, push notifications, task subtasks, calendar view, voice mark-done
 - **Enhancements ✅:** Real-mic voice screen, photo moments for rewards, 1 pt per kid habit completion, bug fixes
+- **Enhancements ✅:** Tappable 30-day habit history strip, show/hide password, "points" wording, photo on deduct, delete point events, notification action buttons (Mark Done / Snooze / Clear), recurring task fix for tasks without due date
 - Build, publish, and launch on Google Play Store
 
 ---
@@ -82,7 +83,7 @@ The app is designed for a family of up to 6 members: 2 parents and up to 4 kids.
 | `/join` | Invite link |
 | `/voice-capture` | Deep link from Google Assistant |
 | `/test-voice` | Mic button on Home — voice task testing |
-| `/login`, `/signup`, `/forgot-password`, `/reset-password` | Public |
+| `/login`, `/signup`, `/forgot-password`, `/reset-password` | Public — password fields include show/hide toggle (eye icon) so users can verify their password before submitting |
 
 ---
 
@@ -147,7 +148,8 @@ Recurring tasks auto-create next occurrence on completion.
 - **Header:** "Habits" + count
 - **Tab switcher:** Mine · [Kid1] · [Kid2] · ...
 - **Habit cards:** icon, title, frequency label, streak counter 🔥, target count, complete/undo button
-  - **Daily habits** show a **7-day completion strip** below the card: 7 dot indicators for the last 7 days (oldest left → today right). Green filled = completed; red outlined = missed scheduled day; dash (–) = not scheduled that day. Only rendered for `frequency === 'daily'`.
+  - All habit cards (regardless of frequency) show a **30-day scrollable history strip** below the card. Auto-scrolls to today on open. Oldest day on the left, today on the right. Green filled circle = completed; outlined circle = missed scheduled day; dash (–) = not scheduled that day. Shows month label when the 1st of the month is visible.
+- **Each circle in the strip is tappable:** tapping a past scheduled day toggles completion on/off, allowing logging or undoing completions for any of the last 30 days directly from the strip.
 - Kid habits: completing opens streak bonus toast if 7-day streak achieved (+5 bonus points)
 - **FAB (+):** opens add habit modal
 - **Habit modal fields:** Title, Icon (emoji picker from 24 preset icons), Description, Frequency (Daily/Weekdays/Weekends/Custom days), Target count per day, Reminder time, Category, Assignees (multi-select)
@@ -168,6 +170,7 @@ Recurring tasks auto-create next occurrence on completion.
   - Each row: time pill, category/habit icon, title, type badge (🔔 Notify / ⏰ Alarm / 📳 Nudge), nudge interval
 - **Notification permission banner:** prompts user to allow browser notifications; shows green confirmed state when granted
 - **Polling:** checks every 30 seconds while page is open; fires browser Notification API for due alarms; tracks fired alarms in localStorage per day to prevent duplicates
+- **Habit notification action buttons (Android native):** habit reminder notifications include three inline action buttons — **✅ Mark Done** (foreground, opens app and records completion directly to `habit_completions`), **💤 Snooze 10 min** (re-schedules same notification 10 minutes later), **Clear** (dismiss). Registered via Capacitor `LocalNotifications.registerActionTypes()` on app start.
 - **Add/Edit Alarm Modal:**
   - Time picker (native `<input type="time">`)
   - Label (optional free text)
@@ -251,7 +254,9 @@ Three tabs: **🏆 Points** · **🎁 Store** · **📜 History**
 - Each row: icon, reason/title, kid name badge, date, ±points
 - Photo rows show a thumbnail above the event; **tapping the photo opens a full-screen lightbox** (fixed overlay, dark bg, tap anywhere to close)
 
-**Give Points modal:** kid selector, +Award / −Deduct toggle, amount (quick picks + custom), reason (quick picks + custom), optional **photo capture** (camera or gallery, compressed to ≤900px JPEG, uploaded to `moment-photos` Supabase Storage bucket), save button — reusable across sessions. Photos render above the event row in History tab. **Form fields (points, reason) are preserved when the camera/gallery app opens and returns** — only resets on fresh modal open (`wasOpenRef` pattern guards against mobile focus-loss re-renders).
+**Give Points modal:** kid selector, +Award / −Deduct toggle, amount (quick picks + custom), reason (quick picks + custom), optional **photo capture** available in both Award and Deduct modes (camera or gallery, compressed to ≤900px JPEG, uploaded to `moment-photos` Supabase Storage bucket), save button — reusable across sessions. Photos render above the event row in History tab. **Form fields (points, reason) are preserved when the camera/gallery app opens and returns** — only resets on fresh modal open (`wasOpenRef` pattern guards against mobile focus-loss re-renders).
+
+**Delete point event:** Each point event in the History tab has a delete button (owner only). Tapping shows an inline confirm; confirming deletes the `kid_point_events` row and adjusts the kid's running balance in real time.
 
 ---
 
@@ -307,7 +312,7 @@ Three tabs: **🏆 Points** · **🎁 Store** · **📜 History**
 | Nudge interval | 5 / 10 / 15 / 30 / 60 min |
 | Priority | High (rose) / Medium (amber) / Low (gray) |
 | Category | Home / Work / Health / Shopping / Kids / School / Finance / Other |
-| Recurring | None / Daily / Weekly / Monthly — auto-creates next task on completion |
+| Recurring | None / Daily / Weekly / Monthly — auto-creates next task on completion. If no due date was set, today is used as the base date for the next occurrence so the task always respawns. |
 | Overdue | Computed: due_date < today && !completed_at |
 
 ### 4.2 Task Assignment Workflow (Phase 14 ✅)
@@ -333,7 +338,7 @@ When User A assigns a task to Partner (User B):
 - Habits can be assigned to Owner ('me') and/or any kid (multi-assignee)
 - Frequency: Daily / Weekdays / Weekends / Custom (pick specific days)
 - Target count per day (e.g. drink water 8x)
-- 7-day dot calendar: green (done), red (missed), orange (today not yet done)
+- **30-day scrollable history strip:** all habit cards show a horizontally scrollable strip of the last 30 days. Each scheduled day is a tappable button — tap to mark complete or undo for any past date. Auto-scrolls to today on load. Month labels appear on the 1st of the month.
 - Streak counter — computed from consecutive scheduled days with completions
 - **1 point per completion:** every time a kid completes a habit, 1 point is auto-awarded (type: `habit_completion`) before the streak check
 - **7-day streak bonus:** completing a habit every scheduled day for 7 consecutive days awards +5 bonus points to kid, fires confetti, shows toast
@@ -594,6 +599,13 @@ Default rewards (configurable):
 | 43 | Voice task screen captures full sentences without word duplication (resultIndex fix) | ✅ Built |
 | 44 | Give Points modal photo picker does not reset points/reason fields on camera/gallery return | ✅ Built |
 | 45 | App accessible via Vercel web URL with correct SPA routing (all routes serve index.html) | ✅ Built |
+| 46 | Password fields have show/hide toggle — users can reveal their password to verify input | ✅ Built |
+| 47 | All "pts" abbreviations replaced with "points" throughout UI (leaderboard, history, modals, toasts) | ✅ Built |
+| 48 | Habit history strip is 30-day scrollable with tappable circles — mark/undo any past date directly | ✅ Built |
+| 49 | Photo capture available on both Award and Deduct flows in Give Points modal | ✅ Built |
+| 50 | Point history records deletable by owner — adjusts balance immediately | ✅ Built |
+| 51 | Habit notifications include Mark Done / Snooze 10 min / Clear action buttons on Android | ✅ Built |
+| 52 | Recurring tasks without a due date now spawn the next occurrence (uses today as base date) | ✅ Built |
 
 ---
 
@@ -624,6 +636,7 @@ Default rewards (configurable):
 | Enhancement | UX polish — grocery attribution, fasting gamification, rewards reset, display names | ✅ Complete |
 | Enhancement | Real-mic voice screen, photo moments, 1pt/habit, bug fixes | ✅ Complete |
 | Enhancement | App Permissions, Data Reset, Leaderboard polish, Voice fix, 7-day habit strip, Photo lightbox, Vercel deployment | ✅ Complete |
+| Enhancement | Tappable 30-day habit history, show/hide password, "points" wording, photo on deduct, delete point events, habit notification actions, recurring task fix, versionCode 4 / v1.2.0 AAB | ✅ Complete |
 
 ---
 
@@ -655,7 +668,7 @@ Default rewards (configurable):
 
 | Metric | Target |
 |--------|--------|
-| Feature completion | 44/45 criteria met |
+| Feature completion | 52/52 criteria met |
 | App rating | 4.5+ stars on Play Store |
 | Real-time sync latency | < 3 seconds |
 | Daily active users | 100+ by month 3 |
@@ -669,9 +682,9 @@ Default rewards (configurable):
 | Field | Value |
 |-------|-------|
 | **Prepared by** | Personal Learning Project |
-| **Status** | Phases 1–20 complete + enhancements — Phase 13 (Play Store) next |
-| **Last updated** | May 20, 2026 |
-| **Next review** | After Phase 13 completion |
+| **Status** | Phases 1–20 complete + enhancements — v1.2.0 AAB submitted to Play Store |
+| **Last updated** | June 3, 2026 |
+| **Next review** | After next feature batch |
 
 ---
 

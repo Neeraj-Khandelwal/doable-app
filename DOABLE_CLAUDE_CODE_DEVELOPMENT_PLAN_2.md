@@ -1,7 +1,7 @@
 # Doable Android App – Claude Code Development Plan
-**Version:** 2.3  
-**Date:** May 20, 2026  
-**Status:** Active Development — Phases 1–20 Complete + Enhancements — Closed Testing  
+**Version:** 2.4  
+**Date:** June 3, 2026  
+**Status:** Active Development — Phases 1–20 Complete + Enhancements — v1.2.0 on Play Store  
 **Platform:** Android 10+ (API 29+)  
 **Tech Stack:** React + Tailwind CSS + Supabase + Capacitor + EAS Build  
 
@@ -1874,6 +1874,14 @@ Color scheme: peach, lavender, mint, sky, amber, rose"
 | 19 | Reward history photo tap-to-expand lightbox | Low | Enhancement | ✅ Complete |
 | 20 | GivePointsModal photo form reset fix (wasOpenRef pattern) | High | Enhancement | ✅ Complete |
 | 21 | Vercel deployment — `vercel.json` SPA rewrite rule for all routes | Medium | Enhancement | ✅ Complete |
+| 22 | Show/hide password toggle on all password inputs (`Input.tsx` eye-icon button) | Medium | Enhancement | ✅ Complete |
+| 23 | Replace all "pts" abbreviations with "points" across entire UI | Low | Enhancement | ✅ Complete |
+| 24 | 30-day scrollable tappable habit history strip (expanded from 7-day, any day circle logs/undoes) | High | Enhancement | ✅ Complete |
+| 25 | Photo capture available in Deduct mode of Give Points modal | Medium | Enhancement | ✅ Complete |
+| 26 | Delete point event from History tab — adjusts balance in real time | Medium | Enhancement | ✅ Complete |
+| 27 | Habit notification action buttons: Mark Done / Snooze 10 min / Clear (Android native) | High | Enhancement | ✅ Complete |
+| 28 | Fix recurring tasks without due date not spawning next occurrence | High | Enhancement | ✅ Complete |
+| 29 | versionCode 4 / versionName 1.2.0 — signed AAB generated and ready for Play Store | High | Enhancement | ✅ Complete |
 
 ---
 
@@ -2088,6 +2096,82 @@ Reuses existing `fireImmediateNotification()` from `src/services/notificationSer
 
 ---
 
+# ENHANCEMENT: Habit History, Password Visibility, Points Wording, Notification Actions, Recurring Fix — v1.2.0
+*Completed: June 3, 2026*
+
+## 30-Day Scrollable Tappable Habit History Strip
+**File: `src/components/habits/HabitCard.tsx`**
+- Expanded `WeekStrip` component from 7 fixed days to **30 scrollable days**
+- `scrollRef` + `useEffect` auto-scrolls to today (rightmost) on mount
+- Month abbreviation label appears on the 1st of each visible month
+- Each scheduled-day circle is now a `<button>` — tapping calls `onComplete(date)` or `onUndo(date)`
+- `onUndo` signature changed from `() => void` → `(date?: string) => void` in `HabitCard`, `HabitContext`, and `Habits.tsx`
+- `HabitContext.undoComplete(habitId, assignee, date?)` uses `const targetDate = date ?? todayStr()`
+- Strip now renders for **all frequencies** (not just `daily`) since any frequency can have past completions
+
+## Show/Hide Password Toggle
+**File: `src/components/common/Input.tsx`**
+- When `type="password"`, wraps input in `<div className="relative">` with `pr-10` on the input
+- Added eye/eye-slash SVG icon button (absolutely positioned right-3) toggling `showPassword` state
+- Input renders as `type={showPassword ? 'text' : 'password'}` — no API or auth changes
+
+## "pts" → "points" Wording
+Changed across all UI files: `KidPointsCard.tsx`, `Rewards.tsx`, `RewardCard.tsx`, `GivePointsModal.tsx`, `RewardModal.tsx`, `RewardsSettingsModal.tsx`, `HabitPointsConfigModal.tsx`, `RatingConfigModal.tsx`, `RatingModal.tsx`, `Habits.tsx`.
+- Pluralization patterns (`pt{n!==1?'s':''}`) updated to `point{n!==1?'s':''}`.
+
+## Photo on Deduct + Delete Point Events
+**`src/components/rewards/GivePointsModal.tsx`:**
+- Removed `{mode === '+' && (...)}` condition around the photo section — photo is now available in both Award and Deduct modes.
+
+**`src/pages/Rewards.tsx`:**
+- Added `confirmDeleteEventId` and `deletingEventId` state
+- Each point event row has a delete button (owner only); tapping sets `confirmDeleteEventId`; confirming calls `deletePointEvent(id)`
+
+**`src/context/RewardsContext.tsx`:**
+```typescript
+const deletePointEvent = async (id: string) => {
+  const { error: deleteError } = await supabase.from('kid_point_events').delete().eq('id', id);
+  if (deleteError) return { error: deleteError.message };
+  setKidPointEvents((prev) => prev.filter((e) => e.id !== id));
+  return {};
+};
+```
+
+## Habit Notification Action Buttons (Android)
+**`src/services/notificationService.ts`:**
+- `HABIT_ACTION_TYPE_ID = 'HABIT_REMINDER'`
+- `registerHabitNotificationActions()` — registers 3 actions: `complete` (foreground), `snooze`, `dismiss` (destructive)
+- `addHabitNotificationActionListener(handler)` — filters events by `extra.type === 'habit'`; returns cleanup function
+- `scheduleSnoozeNotification(notifId, title, body, extra, minutes)` — re-uses same notifId
+- `scheduleReminderNotification` updated to accept optional `extra` and `actionTypeId` params
+
+**`src/pages/Alarms.tsx`:**
+- On mount: calls `registerHabitNotificationActions()` and attaches action listener
+- `complete` action: inserts directly into `habit_completions` via Supabase (no React context needed since app may be backgrounded)
+- `snooze` action: calls `scheduleSnoozeNotification(notifId, title, body, extra, 10)`
+- Habit notifications scheduled with `habitExtra = { type: 'habit', habitId, assignee, familyId }` and `actionTypeId: HABIT_ACTION_TYPE_ID`
+
+## Recurring Task Fix (No Due Date)
+**`src/context/TaskContext.tsx`** — `markComplete` and `rateAndComplete`:
+```typescript
+// Before (blocked tasks without due dates):
+if (task?.recurrence !== 'none' && task?.due_date) { ... }
+
+// After (uses today as fallback):
+if (task && task.recurrence !== 'none') {
+  const baseDue = task.due_date ?? new Date().toISOString().split('T')[0];
+  const nextDue = getNextDueDate(baseDue, task.recurrence, task.custom_recurrence_days);
+  ...
+}
+```
+
+## Version Bump & Play Store AAB
+- **`android/app/build.gradle`:** `versionCode 3 → 4`, `versionName "1.1.0" → "1.2.0"`
+- **Build:** `build-android.ps1` ran successfully — `app-release.aab` (6.92 MB) generated at `android/app/build/outputs/bundle/release/app-release.aab`
+- Committed and pushed to `main` (commit `f3ada04`)
+
+---
+
 ## Summary
 
 This plan covers Phases 1–20 of the Doable app plus post-Phase-14 enhancements. All core MVP phases (1–12), Phase 14 (task assignment), Phases 15–20 (feature expansion), and recent enhancements are complete.
@@ -2099,13 +2183,14 @@ This plan covers Phases 1–20 of the Doable app plus post-Phase-14 enhancements
 - Phases 15–20: ✅ Display name, templates, notifications, subtasks, calendar, voice mark-done
 - Enhancements: ✅ Real-mic voice, photo moments, habit points, bug fixes
 - Enhancements: ✅ App Permissions, Data Reset, Leaderboard polish, Voice fix, 7-day habit strip, Photo lightbox, Vercel deployment
+- Enhancements: ✅ Tappable 30-day habit history, show/hide password, "points" wording, photo on deduct, delete point events, habit notification actions, recurring task fix, v1.2.0 AAB
 
 **Remaining Work:**
-- Phase 13: Generate signed AAB → upload to Play Store (closed testing in progress)
-- Run any pending migrations in Supabase SQL Editor (017, 018, 019 if not yet applied)
+- Upload v1.2.0 `app-release.aab` to Google Play Console (versionCode 4, versionName 1.2.0)
+- Run Supabase migration 023: `ALTER TABLE habits ADD COLUMN IF NOT EXISTS reminder_times TEXT[];` (if habit multi-reminder feature is pursued)
 
 ---
 
 **Document Status:** Active Development  
-**Last Updated:** May 20, 2026  
-**Next Step:** Phase 13 — Play Store closed testing → production release
+**Last Updated:** June 3, 2026  
+**Next Step:** Upload v1.2.0 AAB to Play Store → production release
