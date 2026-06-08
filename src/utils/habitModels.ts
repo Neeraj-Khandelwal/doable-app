@@ -75,8 +75,19 @@ export const FREQUENCY_LABELS: Record<HabitFrequency, string> = {
 
 export const DAY_LABELS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
+/** Returns YYYY-MM-DD for a Date using the device's LOCAL timezone (not UTC). */
+export function localDateStr(d: Date = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** Parses a YYYY-MM-DD string as LOCAL midnight, not UTC midnight. */
+export function parseLocalDate(s: string): Date {
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
 export function todayStr(): string {
-  return new Date().toISOString().split('T')[0];
+  return localDateStr();
 }
 
 export function isScheduledForDay(habit: Habit, day: number): boolean {
@@ -116,7 +127,7 @@ export function computeStreak(completions: HabitCompletion[], assignee: string, 
   let streak = 0;
 
   for (let i = 0; i < 90; i++) {
-    const dateStr = current.toISOString().split('T')[0];
+    const dateStr = localDateStr(current);
 
     if (isScheduledForDay(habit, current.getDay())) {
       if (completedDates.has(dateStr)) {

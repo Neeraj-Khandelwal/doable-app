@@ -9,12 +9,16 @@ export interface ParsedTask {
   category: TaskCategory;
 }
 
+function _lds(d: Date = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
 const DATE_KEYWORDS: Record<string, () => string> = {
-  today: () => new Date().toISOString().split('T')[0],
-  tomorrow: () => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().split('T')[0]; },
-  'next week': () => { const d = new Date(); d.setDate(d.getDate() + 7); return d.toISOString().split('T')[0]; },
-  'next month': () => { const d = new Date(); d.setMonth(d.getMonth() + 1); return d.toISOString().split('T')[0]; },
-  'this week': () => { const d = new Date(); d.setDate(d.getDate() + 7); return d.toISOString().split('T')[0]; },
+  today: () => _lds(),
+  tomorrow: () => { const d = new Date(); d.setDate(d.getDate() + 1); return _lds(d); },
+  'next week': () => { const d = new Date(); d.setDate(d.getDate() + 7); return _lds(d); },
+  'next month': () => { const d = new Date(); d.setMonth(d.getMonth() + 1); return _lds(d); },
+  'this week': () => { const d = new Date(); d.setDate(d.getDate() + 7); return _lds(d); },
 };
 
 const PRIORITY_KEYWORDS: Record<string, TaskPriority> = {

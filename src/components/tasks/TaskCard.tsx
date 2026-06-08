@@ -27,12 +27,16 @@ const KID_COLOR_MAP: Record<string, string> = {
   rose: '#f48fb1',
 };
 
+function parseLocalDate(s: string): Date {
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
 function formatDueDate(due: string | null, overdue: boolean): { label: string; className: string } {
   if (!due) return { label: '', className: '' };
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const d = new Date(due);
-  d.setHours(0, 0, 0, 0);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const d = parseLocalDate(due);
   const diff = Math.round((d.getTime() - today.getTime()) / 86400000);
 
   let label = '';

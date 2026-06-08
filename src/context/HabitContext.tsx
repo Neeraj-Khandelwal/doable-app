@@ -51,7 +51,7 @@ export const HabitProvider = ({ children }: { children: ReactNode }) => {
     const thirtyDaysAgo = (() => {
       const d = new Date();
       d.setDate(d.getDate() - 30);
-      return d.toISOString().split('T')[0];
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     })();
 
     const [habitsRes, completionsRes] = await Promise.all([

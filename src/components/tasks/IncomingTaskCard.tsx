@@ -21,7 +21,8 @@ export default function IncomingTaskCard({ task, creatorName, onAccept, onReject
   const [loading, setLoading] = useState(false);
 
   const due = task.due_date
-    ? new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    ? (() => { const [y,m,d] = task.due_date!.split('-').map(Number); return new Date(y,m-1,d); })()
+        .toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     : null;
 
   const handleAccept = async () => {

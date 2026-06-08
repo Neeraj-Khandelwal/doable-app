@@ -1,3 +1,5 @@
+import { localDateStr, parseLocalDate } from './habitModels';
+
 export type TaskPriority = 'high' | 'medium' | 'low';
 export type AssignmentStatus = 'pending_acceptance' | 'accepted' | 'rejected';
 export type TaskCategory = 'home' | 'work' | 'health' | 'shopping' | 'kids' | 'school' | 'finance' | 'other';
@@ -154,10 +156,8 @@ export function createTask(data: Partial<Task>): Task {
 export function isTaskOverdue(task: Task): boolean {
   if (task.completed_at) return false;
   if (!task.due_date) return false;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const due = new Date(task.due_date);
-  due.setHours(0, 0, 0, 0);
+  const today = parseLocalDate(localDateStr());
+  const due = parseLocalDate(task.due_date);
   return due < today;
 }
 
@@ -167,12 +167,12 @@ export function isKidTask(task: Task): boolean {
 
 export function getNextDueDate(dueDate: string, recurrence: TaskRecurrence, customDays?: number | null): string | null {
   if (recurrence === 'none') return null;
-  const d = new Date(dueDate);
+  const d = parseLocalDate(dueDate);
   if (recurrence === 'daily') d.setDate(d.getDate() + 1);
   else if (recurrence === 'weekly') d.setDate(d.getDate() + 7);
   else if (recurrence === 'fortnightly') d.setDate(d.getDate() + 14);
   else if (recurrence === 'monthly') d.setMonth(d.getMonth() + 1);
   else if (recurrence === 'custom' && customDays && customDays > 0) d.setDate(d.getDate() + customDays);
   else return null;
-  return d.toISOString().split('T')[0];
+  return localDateStr(d);
 }

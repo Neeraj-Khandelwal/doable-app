@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import type { Habit } from '../../utils/habitModels';
-import { CATEGORY_LABELS, CATEGORY_ICONS, FREQUENCY_LABELS, isScheduledToday, isScheduledForDay, todayStr } from '../../utils/habitModels';
+import { CATEGORY_LABELS, CATEGORY_ICONS, FREQUENCY_LABELS, isScheduledToday, isScheduledForDay, todayStr, localDateStr } from '../../utils/habitModels';
 import type { KidProfile } from '../../utils/familyModels';
 
 const KID_COLOR_MAP: Record<string, string> = {
@@ -40,7 +40,7 @@ function WeekStrip({ habit, completedDates, accentColor, onComplete, onUndo }: {
   const days = Array.from({ length: 30 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (29 - i)); // oldest on left, today on right
-    const dateStr = d.toISOString().split('T')[0];
+    const dateStr = localDateStr(d);
     const dayOfWeek = d.getDay();
     const dayOfMonth = d.getDate();
     const month = d.getMonth();
@@ -134,13 +134,13 @@ export default function HabitCard({ habit, assignee, todayCount, streak, kids, c
   const yesterday = (() => {
     const d = new Date();
     d.setDate(d.getDate() - 1);
-    return d.toISOString().split('T')[0];
+    return localDateStr(d);
   })();
 
   const minDate = (() => {
     const d = new Date();
     d.setDate(d.getDate() - 30);
-    return d.toISOString().split('T')[0];
+    return localDateStr(d);
   })();
 
   const handleDateSelect = (date: string) => {

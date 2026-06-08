@@ -275,7 +275,8 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       // Handle recurrence: create next occurrence
       const task = tasks.find((t) => t.id === id);
       if (task && task.recurrence !== 'none') {
-        const baseDue = task.due_date ?? new Date().toISOString().split('T')[0];
+        const n = new Date();
+        const baseDue = task.due_date ?? `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
         const nextDue = getNextDueDate(baseDue, task.recurrence, task.custom_recurrence_days);
         if (nextDue) {
           await createTask({
@@ -309,7 +310,8 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       if (result.error) return result;
       const task = tasks.find((t) => t.id === id);
       if (task && task.recurrence !== 'none') {
-        const baseDue = task.due_date ?? new Date().toISOString().split('T')[0];
+        const n = new Date();
+        const baseDue = task.due_date ?? `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
         const nextDue = getNextDueDate(baseDue, task.recurrence, task.custom_recurrence_days);
         if (nextDue) {
           await createTask({ ...task, due_date: nextDue, completed_by: null, completed_at: null, ratings: [] });
