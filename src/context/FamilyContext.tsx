@@ -137,7 +137,7 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
     }
 
     setLoading(false);
-  }, [user]);
+  }, [user?.id]);
 
   useEffect(() => {
     void fetchFamilyData();
