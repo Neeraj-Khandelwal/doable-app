@@ -12,6 +12,11 @@ import {
   sessionDurationMinutes,
 } from '../utils/fastingModels';
 
+function toDatetimeLocal(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
 export default function Fasting() {
   const {
     currentSession,
@@ -31,6 +36,8 @@ export default function Fasting() {
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState('');
   const [showEndConfirm, setShowEndConfirm] = useState(false);
+  const [startTimeInput, setStartTimeInput] = useState(() => toDatetimeLocal(new Date()));
+  const [endTimeInput, setEndTimeInput] = useState(() => toDatetimeLocal(new Date()));
 
   const elapsedMinutes = Math.floor(elapsedSeconds / 60);
   const goalMinutes = goalHours * 60;
@@ -46,19 +53,36 @@ export default function Fasting() {
     if (!currentSession) confettiFiredRef.current = false;
   }, [percent, currentSession, fire]);
 
+  // Recomputed each render so the max stays current as time passes
+  const nowMax = toDatetimeLocal(new Date());
+
   const handleStart = async () => {
+    const selected = new Date(startTimeInput);
+    if (isNaN(selected.getTime())) { setActionError('Invalid start time.'); return; }
+    if (selected > new Date()) { setActionError('Start time cannot be in the future.'); return; }
     setActionLoading(true);
     setActionError('');
-    const result = await startFast();
+    const result = await startFast(selected.toISOString());
     if (result.error) setActionError(result.error);
     setActionLoading(false);
   };
 
+  const handleShowEndConfirm = () => {
+    setEndTimeInput(toDatetimeLocal(new Date()));
+    setShowEndConfirm(true);
+  };
+
   const handleEnd = async () => {
+    const selected = new Date(endTimeInput);
+    if (isNaN(selected.getTime())) { setActionError('Invalid end time.'); return; }
+    if (selected > new Date()) { setActionError('End time cannot be in the future.'); return; }
+    if (currentSession && selected < new Date(currentSession.start_time)) {
+      setActionError('End time cannot be before start time.'); return;
+    }
     setActionLoading(true);
     setActionError('');
     setShowEndConfirm(false);
-    const result = await endFast();
+    const result = await endFast(selected.toISOString());
     if (result.error) {
       setActionError(result.error);
     } else {
@@ -183,8 +207,19 @@ export default function Fasting() {
 
           {/* End fast */}
           {showEndConfirm ? (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <p className="text-sm text-center text-gray-600 font-medium">End your fast now?</p>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">Actual end time</label>
+                <input
+                  type="datetime-local"
+                  value={endTimeInput}
+                  max={toDatetimeLocal(new Date())}
+                  min={currentSession ? toDatetimeLocal(new Date(currentSession.start_time)) : undefined}
+                  onChange={(e) => setEndTimeInput(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose bg-gray-50"
+                />
+              </div>
               <div className="flex gap-2">
                 <button
                   onClick={() => setShowEndConfirm(false)}
@@ -203,7 +238,7 @@ export default function Fasting() {
             </div>
           ) : (
             <button
-              onClick={() => setShowEndConfirm(true)}
+              onClick={handleShowEndConfirm}
               className="w-full py-3.5 bg-rose text-white font-bold rounded-xl hover:opacity-90 transition-opacity"
             >
               End Fast
@@ -233,6 +268,16 @@ export default function Fasting() {
             ))}
           </div>
 
+          <div className="text-left">
+            <label className="block text-xs font-semibold text-gray-500 mb-1">Start time</label>
+            <input
+              type="datetime-local"
+              value={startTimeInput}
+              max={nowMax}
+              onChange={(e) => setStartTimeInput(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky bg-gray-50 mb-3"
+            />
+          </div>
           <button
             onClick={handleStart}
             disabled={actionLoading}

@@ -12,8 +12,8 @@ type FastingContextValue = {
   elapsedSeconds: number;
   loading: boolean;
   error: string | null;
-  startFast: () => Promise<{ error?: string }>;
-  endFast: () => Promise<{ error?: string }>;
+  startFast: (startTime?: string) => Promise<{ error?: string }>;
+  endFast: (endTime?: string) => Promise<{ error?: string }>;
   setGoal: (hours: number) => Promise<{ error?: string }>;
 };
 
@@ -104,16 +104,18 @@ export const FastingProvider = ({ children }: { children: ReactNode }) => {
     void fetchData();
   }, [fetchData]);
 
-  const startFast = async (): Promise<{ error?: string }> => {
+  const startFast = async (startTime?: string): Promise<{ error?: string }> => {
     if (!user?.id) return { error: 'Not signed in' };
     if (currentSession) return { error: 'A fast is already in progress' };
 
+    const resolvedStart = startTime ?? new Date().toISOString();
     const { data, error: err } = await supabase
       .from('fast_sessions')
       .insert([{
         user_id: user.id,
         family_id: family?.id ?? null,
         goal_minutes: goalHours * 60,
+        start_time: resolvedStart,
       }])
       .select()
       .single();
@@ -123,18 +125,18 @@ export const FastingProvider = ({ children }: { children: ReactNode }) => {
     return {};
   };
 
-  const endFast = async (): Promise<{ error?: string }> => {
+  const endFast = async (endTime?: string): Promise<{ error?: string }> => {
     if (!currentSession) return { error: 'No active fast' };
 
-    const endTime = new Date().toISOString();
+    const resolvedEnd = endTime ?? new Date().toISOString();
     const { error: err } = await supabase
       .from('fast_sessions')
-      .update({ end_time: endTime })
+      .update({ end_time: resolvedEnd })
       .eq('id', currentSession.id);
 
     if (err) return { error: err.message };
 
-    const completed: FastSession = { ...currentSession, end_time: endTime };
+    const completed: FastSession = { ...currentSession, end_time: resolvedEnd };
     setSessionHistory((prev) => [completed, ...prev]);
     setCurrentSession(null);
     return {};
