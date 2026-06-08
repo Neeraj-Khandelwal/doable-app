@@ -49,7 +49,11 @@ function ReminderTypeBadge({ type }: { type: string }) {
   );
 }
 
-function ReminderRow({ item }: { item: ReminderItem }) {
+function ReminderRow({ item, onComplete, onDismiss }: {
+  item: ReminderItem;
+  onComplete?: () => void;
+  onDismiss?: () => void;
+}) {
   return (
     <div
       className={`flex items-center gap-3 p-3 rounded-xl border transition-opacity ${
@@ -86,11 +90,27 @@ function ReminderRow({ item }: { item: ReminderItem }) {
           )}
         </div>
       </div>
-      <div className="flex-shrink-0">
+      <div className="flex-shrink-0 flex items-center gap-2">
         {item.isCompleted ? (
-          <span className="text-mint text-lg">✓</span>
+          <>
+            <span className="text-mint text-lg">✓</span>
+            {onDismiss && (
+              <button
+                onClick={onDismiss}
+                className="text-gray-300 hover:text-rose transition-colors text-lg leading-none"
+                aria-label="Dismiss"
+              >
+                ×
+              </button>
+            )}
+          </>
         ) : (
-          <span className="w-5 h-5 rounded-full border-2 border-gray-200 inline-block" />
+          <button
+            onClick={onComplete}
+            disabled={!onComplete}
+            className="w-6 h-6 rounded-full border-2 border-gray-300 hover:border-mint hover:bg-mint/10 transition-colors flex items-center justify-center active:scale-90 disabled:opacity-40 disabled:cursor-not-allowed"
+            aria-label="Mark complete"
+          />
         )}
       </div>
     </div>
@@ -155,8 +175,8 @@ function StandaloneAlarmRow({
 }
 
 export default function Alarms() {
-  const { tasks, acceptTask, rejectTask } = useTaskContext();
-  const { habits, getTodayCount } = useHabitContext();
+  const { tasks, markComplete, acceptTask, rejectTask } = useTaskContext();
+  const { habits, getTodayCount, completeHabit } = useHabitContext();
   const { alarms, createAlarm, updateAlarm, deleteAlarm, toggleAlarm } = useAlarmContext();
   const { user } = useAuthContext();
   const { familyMembers, family } = useFamilyContext();
@@ -165,6 +185,19 @@ export default function Alarms() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAlarm, setEditingAlarm] = useState<Alarm | null>(null);
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
+
+  const handleDismiss = (id: string) =>
+    setDismissedIds((prev) => new Set(prev).add(id));
+
+  const handleComplete = (item: ReminderItem) => {
+    if (item.type === 'task') {
+      void markComplete(item.id);
+    } else {
+      const habitId = item.id.split(':')[0];
+      void completeHabit(habitId, 'me');
+    }
+  };
 
   const today = todayStr();
 
@@ -249,7 +282,7 @@ export default function Alarms() {
   const nudgeReminders = allReminders.filter((r) => r.reminderType === 'nudge');
   const regularReminders = allReminders.filter((r) => r.reminderType !== 'nudge');
   const activeReminders = regularReminders.filter((r) => !r.isCompleted);
-  const doneReminders = regularReminders.filter((r) => r.isCompleted);
+  const doneReminders = regularReminders.filter((r) => r.isCompleted && !dismissedIds.has(r.id));
 
   // ── Schedule local notifications for task/habit reminders (native only) ────
   useEffect(() => {
@@ -497,7 +530,7 @@ export default function Alarms() {
           </h2>
           <div className="space-y-2">
             {activeReminders.map((item) => (
-              <ReminderRow key={item.id} item={item} />
+              <ReminderRow key={item.id} item={item} onComplete={() => handleComplete(item)} />
             ))}
           </div>
         </section>
@@ -510,7 +543,7 @@ export default function Alarms() {
           </h2>
           <div className="space-y-2">
             {nudgeReminders.map((item) => (
-              <ReminderRow key={item.id} item={item} />
+              <ReminderRow key={item.id} item={item} onComplete={() => handleComplete(item)} />
             ))}
           </div>
         </section>
@@ -523,7 +556,7 @@ export default function Alarms() {
           </h2>
           <div className="space-y-2">
             {doneReminders.map((item) => (
-              <ReminderRow key={item.id} item={item} />
+              <ReminderRow key={item.id} item={item} onDismiss={() => handleDismiss(item.id)} />
             ))}
           </div>
         </section>
