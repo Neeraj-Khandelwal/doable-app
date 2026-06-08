@@ -17,8 +17,11 @@ import {
   registerForPushNotifications,
   registerHabitNotificationActions,
   addHabitNotificationActionListener,
+  registerTaskNotificationActions,
+  addTaskNotificationActionListener,
   scheduleSnoozeNotification,
   HABIT_ACTION_TYPE_ID,
+  TASK_ACTION_TYPE_ID,
   idFromUuid,
 } from '../services/notificationService';
 import { supabase } from '../supabaseClient';
@@ -231,6 +234,30 @@ export default function Alarms() {
     return cleanup;
   }, [isNative]);
 
+  // ── Register task notification action buttons + handle taps ──────────────────
+  useEffect(() => {
+    if (!isNative) return;
+    void registerTaskNotificationActions();
+    const cleanup = addTaskNotificationActionListener(async (actionId, extra, notifId) => {
+      if (actionId === 'complete') {
+        const { taskId } = extra;
+        if (taskId) {
+          const { data: { user: currentUser } } = await supabase.auth.getUser();
+          await supabase
+            .from('tasks')
+            .update({
+              completed_at: new Date().toISOString(),
+              completed_by: currentUser?.id ?? null,
+            })
+            .eq('id', taskId);
+          await cancelReminderNotification(notifId);
+        }
+      }
+      // 'dismiss' — notification already cleared by Android, nothing to do
+    });
+    return cleanup;
+  }, [isNative]);
+
   // ── Reminder items from tasks + habits ──────────────────────────────────────
   const allReminders = useMemo<ReminderItem[]>(() => {
     const taskItems: ReminderItem[] = tasks
@@ -296,20 +323,18 @@ export default function Alarms() {
         void cancelReminderNotification(idFromUuid(item.id), item.nudgeInterval ?? 0);
         return;
       }
-      const habitExtra = item.type === 'habit' ? {
-        type: 'habit',
-        habitId: item.id.split(':')[0],
-        assignee: 'me',
-        familyId: family?.id ?? '',
-      } : undefined;
+      const notifExtra = item.type === 'habit'
+        ? { type: 'habit', habitId: item.id.split(':')[0], assignee: 'me', familyId: family?.id ?? '' }
+        : { type: 'task', taskId: item.id, familyId: family?.id ?? '' };
+      const actionTypeId = item.type === 'habit' ? HABIT_ACTION_TYPE_ID : TASK_ACTION_TYPE_ID;
       void scheduleReminderNotification(
         idFromUuid(item.id),
         item.reminderTime,
         `${item.icon} ${item.title}`,
         item.type === 'habit' ? 'Time for your habit!' : "Don't forget this task!",
         item.nudgeInterval ?? 0,
-        habitExtra,
-        item.type === 'habit' ? HABIT_ACTION_TYPE_ID : undefined,
+        notifExtra,
+        actionTypeId,
       );
     });
   }, [isNative, isAndroidClock, permission, allReminders]);

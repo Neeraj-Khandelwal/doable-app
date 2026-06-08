@@ -129,6 +129,50 @@ export async function cancelAlarmNotification(notifId: number, repeatDays: numbe
   await LocalNotifications.cancel({ notifications: ids });
 }
 
+// ── Task notification action buttons ─────────────────────────────────────────
+
+export const TASK_ACTION_TYPE_ID = 'TASK_REMINDER';
+
+/**
+ * Register the action buttons that appear on task reminder notifications.
+ * Call once on app start (native only). Safe to call multiple times.
+ */
+export async function registerTaskNotificationActions(): Promise<void> {
+  if (!isNative()) return;
+  await LocalNotifications.registerActionTypes({
+    types: [{
+      id: TASK_ACTION_TYPE_ID,
+      actions: [
+        { id: 'complete', title: '✅ Mark Done', foreground: true },
+        { id: 'dismiss',  title: 'Clear', destructive: true },
+      ],
+    }],
+  });
+}
+
+/**
+ * Listen for taps on task notification action buttons.
+ * Returns a cleanup function — call it on component unmount.
+ */
+export function addTaskNotificationActionListener(
+  handler: (
+    actionId: string,
+    extra: Record<string, string>,
+    notifId: number,
+  ) => void,
+): () => void {
+  if (!isNative()) return () => {};
+  const promise = LocalNotifications.addListener(
+    'localNotificationActionPerformed',
+    (event) => {
+      const extra = (event.notification.extra ?? {}) as Record<string, string>;
+      if (extra.type !== 'task') return;
+      handler(event.actionId, extra, event.notification.id);
+    },
+  );
+  return () => { void promise.then((h) => h.remove()); };
+}
+
 // ── Habit notification action buttons ────────────────────────────────────────
 
 export const HABIT_ACTION_TYPE_ID = 'HABIT_REMINDER';
