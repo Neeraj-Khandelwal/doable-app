@@ -1,4 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
+import { App as CapApp } from '@capacitor/app';
 import { AuthProvider, useAuthContext } from './context/AuthContext';
 import { FamilyProvider } from './context/FamilyContext';
 import { TaskProvider } from './context/TaskContext';
@@ -50,6 +52,14 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const AppRoutes = () => {
+  useEffect(() => {
+    const handle = CapApp.addListener('backButton', ({ canGoBack }) => {
+      if (canGoBack) window.history.back();
+      else void CapApp.exitApp();
+    });
+    return () => { void handle.then(h => h.remove()); };
+  }, []);
+
   return (
     <Routes>
       <Route path="/login" element={<Login />} />

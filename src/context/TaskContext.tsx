@@ -288,6 +288,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
             completed_by: null,
             completed_at: null,
             ratings: [],
+            subtasks: task.subtasks?.map(s => ({ ...s, completed: false })) ?? [],
           });
         }
       }
@@ -317,7 +318,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         const baseDue = task.due_date ?? `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
         const nextDue = getNextDueDate(baseDue, task.recurrence, task.custom_recurrence_days);
         if (nextDue) {
-          await createTask({ ...task, due_date: nextDue, completed_by: null, completed_at: null, ratings: [] });
+          await createTask({ ...task, due_date: nextDue, completed_by: null, completed_at: null, ratings: [], subtasks: task.subtasks?.map(s => ({ ...s, completed: false })) ?? [] });
         }
       }
       return {};

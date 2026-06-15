@@ -17,12 +17,16 @@
  */
 
 import { Capacitor } from '@capacitor/core';
+import type { PluginListenerHandle } from '@capacitor/core';
 import {
   LocalNotifications,
   type ScheduleOptions,
 } from '@capacitor/local-notifications';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { supabase } from '../supabaseClient';
+
+let _regListener: PluginListenerHandle | null = null;
+let _pushListener: PluginListenerHandle | null = null;
 
 export const isNative = () => Capacitor.isNativePlatform();
 
@@ -331,8 +335,12 @@ export async function registerForPushNotifications(userId: string): Promise<void
 
     await PushNotifications.register();
 
+    // Remove old listeners before re-registering to prevent duplicates on re-login
+    _regListener?.remove();  _regListener = null;
+    _pushListener?.remove(); _pushListener = null;
+
     // Token arrives asynchronously
-    PushNotifications.addListener('registration', async ({ value: token }) => {
+    _regListener = await PushNotifications.addListener('registration', async ({ value: token }) => {
       await supabase.from('fcm_tokens').upsert(
         { user_id: userId, token, updated_at: new Date().toISOString() },
         { onConflict: 'user_id' },
@@ -340,7 +348,7 @@ export async function registerForPushNotifications(userId: string): Promise<void
     });
 
     // Handle foreground push messages
-    PushNotifications.addListener('pushNotificationReceived', (notification) => {
+    _pushListener = await PushNotifications.addListener('pushNotificationReceived', (notification) => {
       void fireImmediateNotification(
         notification.title ?? 'Doable',
         notification.body ?? '',

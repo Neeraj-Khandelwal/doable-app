@@ -5,7 +5,11 @@ import type { Family, FamilyMember, KidProfile, HabitPointsConfig } from '../uti
 import { DEFAULT_HABIT_POINTS_CONFIG } from '../utils/familyModels';
 import { type RatingOption, DEFAULT_RATING_OPTIONS } from '../utils/taskModels';
 
-const generateInviteCodeValue = () => Math.random().toString(36).slice(2, 8).toUpperCase();
+const generateInviteCodeValue = () => {
+  const arr = new Uint8Array(4);
+  crypto.getRandomValues(arr);
+  return Array.from(arr, b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+};
 
 type FamilyContextValue = {
   family: Family | null;

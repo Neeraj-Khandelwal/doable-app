@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useHabitContext } from '../context/HabitContext';
 import { useFamilyContext } from '../context/FamilyContext';
@@ -23,6 +23,12 @@ export default function Habits() {
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const [bonusKidId, setBonusKidId] = useState<string | null>(null);
   const [bonusInfo, setBonusInfo] = useState<{ milestone: number; points: number }>({ milestone: 5, points: 5 });
+
+  useEffect(() => {
+    if (!bonusKidId) return;
+    const t = setTimeout(() => setBonusKidId(null), 3000);
+    return () => clearTimeout(t);
+  }, [bonusKidId]);
 
   const tabs = [
     { key: 'me', label: 'Mine' },
@@ -173,7 +179,6 @@ export default function Habits() {
                   if (kid) fireForKids([kid.color]);
                   setBonusInfo({ milestone: result.streakMilestone ?? 5, points: result.bonusPoints ?? 5 });
                   setBonusKidId(activeTab);
-                  setTimeout(() => setBonusKidId(null), 3000);
                   void refreshRewards();
                 }
               }}

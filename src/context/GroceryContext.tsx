@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -48,6 +49,7 @@ export const GroceryProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const pulseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Items scoped to the active list
   const items = allItems.filter((i) => i.list_id === activeListId);
@@ -126,7 +128,11 @@ export const GroceryProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (!family?.id) return;
 
-    const pulse = () => { setSyncing(true); setTimeout(() => setSyncing(false), 600); };
+    const pulse = () => {
+      setSyncing(true);
+      if (pulseTimer.current) clearTimeout(pulseTimer.current);
+      pulseTimer.current = setTimeout(() => setSyncing(false), 600);
+    };
     const filter = `family_id=eq.${family.id}`;
 
     const channel = supabase
