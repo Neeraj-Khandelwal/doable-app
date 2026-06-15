@@ -222,6 +222,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       rejection_reason: null,
       responded_at: null,
       is_private: data.is_private ?? false,
+      subtasks: data.subtasks ?? [],
     };
 
     const { data: created, error: insertError } = await supabase
