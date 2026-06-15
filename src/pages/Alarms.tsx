@@ -274,7 +274,7 @@ export default function Alarms() {
       }));
 
     const habitItems: ReminderItem[] = habits
-      .filter((h) => isScheduledToday(h))
+      .filter((h) => isScheduledToday(h) && h.assignees.includes('me') && h.created_by === user?.id)
       .flatMap((h) => {
         const times = (h.reminder_times?.filter(Boolean).length ? h.reminder_times!.filter(Boolean) : (h.reminder_time ? [h.reminder_time] : []));
         if (times.length === 0) return [];
