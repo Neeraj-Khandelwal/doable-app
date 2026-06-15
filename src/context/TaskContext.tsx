@@ -77,7 +77,8 @@ async function scheduleTaskAlarmDelivery(task: Task, previousNudgeInterval = 0):
     }
   }
 
-  await scheduleReminderNotification(notifId, task.reminder_time, title, "Don't forget this task!", 0);
+  const fireAt = task.due_date ? new Date(`${task.due_date}T${task.reminder_time}`) : undefined;
+  await scheduleReminderNotification(notifId, task.reminder_time, title, "Don't forget this task!", 0, undefined, undefined, fireAt);
 }
 
 export const useTaskContext = () => {

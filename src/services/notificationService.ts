@@ -265,6 +265,7 @@ export async function scheduleReminderNotification(
   nudgeIntervalMinutes = 0,
   extra?: Record<string, string>,
   actionTypeId?: string,
+  fireAt?: Date,
 ) {
   if (!isNative()) return;
 
@@ -272,7 +273,7 @@ export async function scheduleReminderNotification(
   await cancelReminderNotification(notifId, nudgeIntervalMinutes);
 
   if (nudgeIntervalMinutes <= 0) {
-    const at = nextOccurrence(hour, minute);
+    const at = fireAt ?? nextOccurrence(hour, minute);
     await LocalNotifications.schedule({
       notifications: [{ id: notifId, title, body, schedule: { at, allowWhileIdle: true }, extra, actionTypeId }],
     });

@@ -36,6 +36,7 @@ type ReminderItem = {
   reminderType: string;
   nudgeInterval?: number;
   isCompleted: boolean;
+  dueDate?: string | null;
 };
 
 function ReminderTypeBadge({ type }: { type: string }) {
@@ -271,6 +272,7 @@ export default function Alarms() {
         reminderType: t.reminder_type ?? 'notification',
         nudgeInterval: t.nudge_interval ?? undefined,
         isCompleted: !!t.completed_at,
+        dueDate: t.due_date ?? null,
       }));
 
     const habitItems: ReminderItem[] = habits
@@ -320,9 +322,23 @@ export default function Alarms() {
         return;
       }
       if (isAndroidClock && item.type === 'task' && item.reminderType === 'alarm') {
+        // Android Clock handles alarm-type tasks; cancel any local duplicate
         void cancelReminderNotification(idFromUuid(item.id), item.nudgeInterval ?? 0);
         return;
       }
+
+      // For tasks with a due date, fire at due_date+time exactly.
+      // If that moment is already past, cancel and skip — task is overdue.
+      let fireAt: Date | undefined;
+      if (item.type === 'task' && item.dueDate) {
+        const target = new Date(`${item.dueDate}T${item.reminderTime}`);
+        if (target <= new Date()) {
+          void cancelReminderNotification(idFromUuid(item.id), item.nudgeInterval ?? 0);
+          return;
+        }
+        fireAt = target;
+      }
+
       const notifExtra: Record<string, string> = item.type === 'habit'
         ? { type: 'habit', habitId: item.id.split(':')[0], assignee: 'me', familyId: family?.id ?? '' }
         : { type: 'task', taskId: item.id, familyId: family?.id ?? '' };
@@ -335,6 +351,7 @@ export default function Alarms() {
         item.nudgeInterval ?? 0,
         notifExtra,
         actionTypeId,
+        fireAt,
       );
     });
   }, [isNative, isAndroidClock, permission, allReminders]);
