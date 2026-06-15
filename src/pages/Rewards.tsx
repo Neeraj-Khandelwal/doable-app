@@ -313,7 +313,7 @@ export default function Rewards() {
               )}
 
 
-              {isOwner && kidProfiles.length > 0 && (
+              {kidProfiles.length > 0 && (
                 <div
                   className="rounded-2xl p-4 flex flex-col gap-3"
                   style={{ background: 'linear-gradient(135deg, #f3f0fd 0%, #fff9e6 100%)', border: '1.5px solid #e0d7fa' }}
